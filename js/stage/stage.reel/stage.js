@@ -350,12 +350,19 @@ exports.Stage = Montage.create(Component, {
                 // TODO GET THE SCROLL SIZE FROM THE CSS -- 11 px
                 this._canvas.width = this._layoutCanvas.width = this._drawingCanvas.width = this._gridCanvas.width = this.bindingView.width = this.element.offsetWidth - 11;
                 this._canvas.height = this._layoutCanvas.height = this._drawingCanvas.height = this._gridCanvas.height =  this.bindingView.height = this.element.offsetHeight - 11;// - 26 - 26;
+
+				if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
+                    this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
+                }
                 // Hack for now until a full component
                 this.layout.draw();
                 if(this.currentDocument && (this.currentDocument.currentView === "design")) {
                     this.layout.draw3DInfo(true);
                 }
             } else if(this.updatedStage) {
+                if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
+                    this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
+                }
                 this.layout.draw();
                 this.layout.draw3DInfo(true);
             }
