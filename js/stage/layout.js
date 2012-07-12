@@ -122,8 +122,10 @@ exports.Layout = Montage.create(Component, {
     // Redraw stage only once after all deletion is completed
     handleElementsRemoved: {
         value: function(event) {
-            this.draw();
-            this.draw3DInfo(false);
+            this.stage.drawLayout = true;
+            this.stage.updatePlanes = true;
+            this.stage.draw3DInfo = true;
+            this.stage.needsDrawSelection = true;
         }
     },
 
@@ -161,9 +163,6 @@ exports.Layout = Montage.create(Component, {
                 this.elementsToDraw = Array.prototype.slice.call(this.domTree, 0);
             }
 
-            this.draw(); // Not a reel yet
-            this.draw3DInfo(false);
-
             // Clear the domTree copy
             this.domTree.length = 0;
         }
@@ -171,8 +170,6 @@ exports.Layout = Montage.create(Component, {
 
     draw: {
         value: function() {
-            this.clearCanvas();
-
             // TODO Bind the layoutview mode to the current document
             // var mode  = this.application.ninja.currentDocument.layoutMode;
             if(this.layoutView === "layoutOff") return;
@@ -181,21 +178,6 @@ exports.Layout = Montage.create(Component, {
             for(var i = 0, el; i < els; i++){
                 this.drawTagOutline(this.elementsToDraw[i]);
             }
-        }
-    },
-
-    draw3DInfo: {
-        value: function(updatePlanes) {
-            if(updatePlanes) {
-                drawUtils.updatePlanes();
-                this.application.ninja.stage.stageDeps.snapManager._isCacheInvalid = true;
-            }
-
-            if(this.stage.appModel.show3dGrid) {
-                this.application.ninja.stage.stageDeps.snapManager.updateWorkingPlaneFromView();
-            }
-            drawUtils.drawWorkingPlane();
-            drawUtils.draw3DCompass();
         }
     },
 

@@ -114,6 +114,34 @@ exports.Stage = Montage.create(Component, {
         }
     },
 
+    _needsDrawSelection: { value: false },
+
+    needsDrawSelection: {
+        get: function() {
+            return this._needsDrawSelection;
+        },
+        set: function(value) {
+            this._needsDrawSelection = value;
+            if(value) {
+                this.needsDraw = true;
+            }
+        }
+    },
+
+    _needsDrawTool: { value: null },
+
+    needsDrawTool: {
+        get: function() {
+            return this._needsDrawTool;
+        },
+        set: function(value) {
+            this._needsDrawTool = value;
+            if(value) {
+                this.needsDraw = true;
+            }
+        }
+    },
+
     _currentDocumentStageView: {
         value: "front"
     },
@@ -373,6 +401,7 @@ exports.Stage = Montage.create(Component, {
                 if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
                     this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
                 }
+                this.needsDrawSelection = true;
                 this.drawLayout = true; //this.layout.draw();
                 this.updatePlanes = true;
                 this.draw3DInfo = true; //this.layout.draw3DInfo(true);
@@ -380,10 +409,84 @@ exports.Stage = Montage.create(Component, {
         }
     },
 
+    draw: {
+        value: function() {
+            if(!this.currentDocument) return;
+
+            var clearedSelectionCanvas = false;
+            var clearedLayoutCanvas = false;
+
+            if(this.draw3DInfo) {
+//                console.log("draw3DInfo");
+                if(this.updatePlanes) {
+//                    console.log("updatePlanes");
+                    drawUtils.updatePlanes();
+                    this.stageDeps.snapManager._isCacheInvalid = true;
+                    this.updatePlanes = false;
+                }
+                if(this.appModel.show3dGrid) {
+//                    console.log("show3dGrid");
+                    this.stageDeps.snapManager.updateWorkingPlaneFromView();
+                }
+//                console.log("drawWorkingPlane");
+                drawUtils.drawWorkingPlane();
+                this.draw3DInfo = false;
+            }
+            if(this.drawLayout) {
+                if(!clearedLayoutCanvas) {
+                    this.layout.clearCanvas();
+                }
+//                console.log("drawLayout");
+                this.layout.draw();
+                this.drawLayout = false;
+            }
+
+            if(this.currentDocument.model.domContainer !== this.currentDocument.model.documentRoot) {
+                this.clearCanvas();
+                clearedSelectionCanvas = true;
+                this.drawDomContainer(this.currentDocument.model.domContainer);
+            }
+
+            if(this._needsDrawSelection) {
+                if(!clearedSelectionCanvas) {
+                    this.clearCanvas();
+                }
+                //TODO Set this variable in the needs draw so that it does not have to be calculated again for each draw for selection change
+                if(this.application.ninja.selectedElements.length) {
+//                    console.log("drawSelection");
+                    // drawUtils.drawSelectionBounds handles the single selection case as well,
+                    // so we don't have to special-case the single selection case.
+                    // TODO drawUtils.drawSelectionBounds expects an array of elements.
+                    // TODO If we use the routine to only draw selection bounds, then we may want to change it
+                    // TODO to work on _element instead of re-creating a new Array here.
+                    var selArray = new Array();
+
+                    for(var i = 0; this.application.ninja.selectedElements[i];i++) {
+                        var curElement = this.application.ninja.selectedElements[i];
+
+                        // Add element to array that is used to calculate 3d-bounding box of all elements
+                        selArray.push( curElement );
+                    }
+
+                    drawUtils.drawSelectionBounds(selArray, this.showSelectionBounds);
+                }
+                NJevent("selectionDrawn");
+                this.needsDrawTool = null;
+                this.needsDrawSelection = false;
+            }
+        }
+
+    },
+
     didDraw: {
         value: function() {
             this.resizeCanvases = false;
             this.updatedStage = false;
+            if(this._needsDrawTool) {
+//                console.log("drawTool");
+                this.application.ninja.toolsData.selectedToolInstance.HandleMouseMove(this._needsDrawTool);
+                this.needsDrawTool = null;
+            }
         }
     },
 
@@ -648,7 +751,9 @@ exports.Stage = Montage.create(Component, {
 
     handleMousemove: {
         value: function(event) {
-            this.application.ninja.toolsData.selectedToolInstance.HandleMouseMove(event);
+//            this.application.ninja.toolsData.selectedToolInstance.HandleMouseMove(event);
+            // Set a flag here, and tell the tool to handle mouse move in our draw cycle
+            this.needsDrawTool = event;
         }
     },
 
@@ -671,25 +776,28 @@ exports.Stage = Montage.create(Component, {
 
     handleSelectionChange: {
         value: function(event) {
-            // TODO - this is a hack for now because some tools depend on selectionDrawn event for some logic
-            if(this.drawNow) {
-                this.draw();
-                this.drawNow = false;
-            } else {
-                this.needsDraw = true;
-            }
+            this.showSelectionBounds = true;
+            this.needsDrawSelection = true;
+            this.drawLayout = true;
         }
     },
 
     handleElementChanging: {
         value: function(event) {
-            this.needsDraw = true;
+            // TODO - This assumes only selected elements can have their properties modified
+            this.draw3DInfo = true;
+            this.showSelectionBounds = false;
+            this.needsDrawSelection = true;
         }
     },
 
     handleElementChange: {
         value: function(event) {
-            this.needsDraw = true;
+            // TODO - This assumes only selected elements can have their properties modified
+            this.draw3DInfo = true;
+            this.snapManager._isCacheInvalid = true;
+            this.showSelectionBounds = true;
+            this.needsDrawSelection = true;
         }
     },
 
@@ -856,71 +964,6 @@ exports.Stage = Montage.create(Component, {
         }
     },
 
-
-    draw: {
-        value: function() {
-            if(!this.currentDocument) return;
-
-            this.clearCanvas();
-            var clearedLayoutCanvas = false;
-
-            this.drawLayout = true; //this.layout.draw();
-            this.updatePlanes = true;
-            this.draw3DInfo = true; //this.layout.draw3DInfo(true);
-
-            if(this.draw3DInfo) {
-                if(this.updatePlanes) {
-                    drawUtils.updatePlanes();
-                    this.stageDeps.snapManager._isCacheInvalid = true;
-                }
-                if(this.appModel.show3dGrid) {
-                    this.stageDeps.snapManager.updateWorkingPlaneFromView();
-                }
-                drawUtils.drawWorkingPlane();
-                this.layout.clearCanvas();
-                clearedLayoutCanvas = true;
-                drawUtils.draw3DCompass();
-            }
-            if(this.drawLayout) {
-                if(!clearedLayoutCanvas) {
-                    this.layout.clearCanvas();
-                }
-                this.layout.draw();
-            }
-
-            if(this.currentDocument.model.domContainer !== this.currentDocument.model.documentRoot) {
-                this.drawDomContainer(this.currentDocument.model.domContainer);
-            }
-
-            //TODO Set this variable in the needs draw so that it does not have to be calculated again for each draw for selection change
-            if(this.application.ninja.selectedElements.length) {
-                // drawUtils.drawSelectionBounds handles the single selection case as well,
-                // so we don't have to special-case the single selection case.
-                // TODO drawUtils.drawSelectionBounds expects an array of elements.
-                // TODO If we use the routine to only draw selection bounds, then we may want to change it
-                // TODO to work on _element instead of re-creating a new Array here.
-                var selArray = new Array();
-
-                for(var i = 0; this.application.ninja.selectedElements[i];i++) {
-                    var curElement = this.application.ninja.selectedElements[i];
-
-                    // Add element to array that is used to calculate 3d-bounding box of all elements
-                    selArray.push( curElement );
-//                    // Draw bounding box around selected item.
-//                    this.drawElementBoundingBox(curElement);
-//
-//                    // Draw the element normal
-//                    drawUtils.drawElementNormal(curElement);
-                }
-
-                drawUtils.drawSelectionBounds(selArray, this.showSelectionBounds);
-            }
-
-            NJevent("selectionDrawn");
-        }
-
-    },
-
     /**
      * draw3DSelectionRectangle -- Draws a 3D rectangle used for marquee selection
      *                               Uses the _canvasDrawingPrefs for line thickness and color
@@ -957,9 +1000,9 @@ exports.Stage = Montage.create(Component, {
 
             // When in 'Shift Mode' there is no Mouse Position for that event
             var txtX, txtY = 0;
-            var point = webkitConvertPointFromPageToNode(this.canvas, new WebKitPoint(event.pageX, event.pageY));
-            (point.x) ? txtX = point.x : txtX = this.application.ninja.toolsData.selectedToolInstance.downPoint.x;
-            (point.y) ? txtY = point.y : txtY = this.application.ninja.toolsData.selectedToolInstance.downPoint.y;
+            var point = this.toUserContentCoordinates(x2, y2);
+            txtX = point[0];
+            txtY = point[1];
 
 
             var h = Math.round(Math.abs(y2-y0));

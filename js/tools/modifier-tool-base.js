@@ -480,7 +480,6 @@ exports.ModifierToolBase = Montage.create(DrawingTool, {
             if(this._target)
             {
                 this.isDrawing = true;
-                this.application.ninja.stage.showSelectionBounds = false;
                 this._updateTargets();
 
                 if(this._canSnap)
@@ -882,7 +881,6 @@ exports.ModifierToolBase = Montage.create(DrawingTool, {
                                                                     new WebKitPoint(event.pageX, event.pageY));
 
             this.isDrawing = false;
-            this.application.ninja.stage.showSelectionBounds = true;
             if(this._escape) {
                 this._escape = false;
                 return;

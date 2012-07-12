@@ -353,8 +353,10 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                 }
 
                 if(!changed) {
-                    this.drawWorkingPlane();
-                    this.draw3DCompass();
+                    // If we didn't already set userPaddingTop or userPaddingLeft, force stage to redraw
+                    //this.snapManager._isCacheInvalid = true;
+//                    stage.draw3DInfo = true;
+                    stage.needsDraw = true;
                 }
 
                 // TODO - Remove this once all stage drawing is consolidated into a single draw cycle
@@ -680,81 +682,82 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 		{
             this.application.ninja.stage.clearGridCanvas();
             this.drawStageOutline();
-			if (!this.isDrawingGrid()) return;
+			if (this.isDrawingGrid()) {
+                var saveContext = this.getDrawingSurfaceElement();
+                this.setDrawingSurfaceElement(this.application.ninja.stage.gridCanvas);
 
-			var saveContext = this.getDrawingSurfaceElement();
-			this.setDrawingSurfaceElement(this.application.ninja.stage.gridCanvas);
+                // 3 coordinate axes for the plane
+                var zAxis = [this._workingPlane[0], this._workingPlane[1], this._workingPlane[2]];
 
-			// 3 coordinate axes for the plane
-			var zAxis = [this._workingPlane[0], this._workingPlane[1], this._workingPlane[2]];
+                // get a point that lies on the plane
+                var ptOnPlane = MathUtils.getPointOnPlane(this._workingPlane);
 
-			// get a point that lies on the plane
-			var ptOnPlane = MathUtils.getPointOnPlane(this._workingPlane);
+                // define the grid parameters
+                var width = this.snapManager.getStageWidth(),
+                    height = this.snapManager.getStageHeight(),
+                    nLines = 10;
 
-            // define the grid parameters
-            var width = this.snapManager.getStageWidth(),
-                height = this.snapManager.getStageHeight(),
-                nLines = 10;
+                // get a matrix from working plane space to the world
+                var mat = this.getPlaneToWorldMatrix(zAxis, ptOnPlane);
+                var tMat = Matrix.Translation( [0.5*width, 0.5*height, 0] );
+                //mat = tMat.multiply(mat);
+                glmat4.multiply( tMat, mat, mat);
 
-			// get a matrix from working plane space to the world
-			var mat = this.getPlaneToWorldMatrix(zAxis, ptOnPlane);
-			var tMat = Matrix.Translation( [0.5*width, 0.5*height, 0] );
-			//mat = tMat.multiply(mat);
-			glmat4.multiply( tMat, mat, mat);
+                // the positioning of the grid may depend on the view direction.
+                var stage = this.snapManager.getStage();
+                var viewMat = this.viewUtils.getMatrixFromElement(stage);
+                var viewDir = [viewMat[8], viewMat[9], viewMat[10]];
 
-			// the positioning of the grid may depend on the view direction.
-			var stage = this.snapManager.getStage();
-			var viewMat = this.viewUtils.getMatrixFromElement(stage);
-			var viewDir = [viewMat[8], viewMat[9], viewMat[10]];
+                var dx, dy, delta, pt0, pt1;
+                dx = this._gridVerticalSpacing;
+                dy = this._gridHorizontalSpacing;
+                nLines = Math.floor(width / dx) + 1;
+                if (MathUtils.fpCmp(dx*nLines,width) == 0)  nLines--;
 
-			var dx, dy, delta, pt0, pt1;
-			dx = this._gridVerticalSpacing;
-			dy = this._gridHorizontalSpacing;
-			nLines = Math.floor(width / dx) + 1;
-			if (MathUtils.fpCmp(dx*nLines,width) == 0)  nLines--;
+                var saveColor = this._lineColor;
+                var saveLineWidth = this._drawingContext.lineWidth;
 
-			var saveColor = this._lineColor;
-			var saveLineWidth = this._drawingContext.lineWidth;
+                // reset the line cache
+                this._gridLineArray = new Array();
 
-			// reset the line cache
-			this._gridLineArray = new Array();
+                if (this.drawXY) this._lineColor = "red";
+                if (this.drawYZ) this._lineColor = "green";
+                if (this.drawXZ) this._lineColor = "blue";
+                this._drawingContext.lineWidth = 0.25;
 
-			if (this.drawXY) this._lineColor = "red";
-			if (this.drawYZ) this._lineColor = "green";
-			if (this.drawXZ) this._lineColor = "blue";
-			this._drawingContext.lineWidth = 0.25;
+                // get the two endpoints of the first line with constant X
+                pt0 = [-width / 2.0, height / 2.0, 0];
+                pt1 = [-width / 2.0, -height / 2.0, 0];
+                delta = [dx, 0, 0];
 
-			// get the two endpoints of the first line with constant X
-			pt0 = [-width / 2.0, height / 2.0, 0];
-			pt1 = [-width / 2.0, -height / 2.0, 0];
-			delta = [dx, 0, 0];
+                this._gridVerticalLineCount = nLines;
+                this._gridOrigin = pt1.slice(0);
 
-			this._gridVerticalLineCount = nLines;
-			this._gridOrigin = pt1.slice(0);
+                // draw the lines with constant X
+                this.drawGridLines(pt0, pt1, delta, mat, nLines);
 
-			// draw the lines with constant X
-			this.drawGridLines(pt0, pt1, delta, mat, nLines);
+                // get the two endpoints of the first line with constant Y
+                pt0 = [-width / 2.0, -height / 2.0, 0];
+                pt1 = [width / 2.0, -height / 2.0, 0];
 
-			// get the two endpoints of the first line with constant Y
-			pt0 = [-width / 2.0, -height / 2.0, 0];
-			pt1 = [width / 2.0, -height / 2.0, 0];
+                delta = [0, dy, 0];
+                nLines = Math.floor(height / dy) + 1;
+                if (MathUtils.fpCmp(dy*nLines,height) == 0)  nLines--;
 
-			delta = [0, dy, 0];
-			nLines = Math.floor(height / dy) + 1;
-			if (MathUtils.fpCmp(dy*nLines,height) == 0)  nLines--;
+                this._gridHorizontalLineCount = nLines;
 
-			this._gridHorizontalLineCount = nLines;
+                // draw the lines with constant Y
+                this.drawGridLines(pt0, pt1, delta, mat, nLines);
 
-			// draw the lines with constant Y
-			this.drawGridLines(pt0, pt1, delta, mat, nLines);
+                this._lineColor = saveColor;
+                this._drawingContext.lineWidth = saveLineWidth;
 
-			this._lineColor = saveColor;
-			this._drawingContext.lineWidth = saveLineWidth;
+                // draw the lines
+                this.redrawGridLines();
 
-			// draw the lines
-			this.redrawGridLines();
-
-			this.setDrawingSurfaceElement(saveContext);
+                this.setDrawingSurfaceElement(saveContext);
+            }
+            this.draw3DCompass();
 		}
 	},
 
@@ -911,14 +914,13 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                 ssMat,
                 ssMatInv,
                 elt,
+                dir,
+                ctr,
                 stageInfo,
                 stageComponent = this.application.ninja.stage,
                 context;
 			
 			if (len === 0)  return;
-//			var context = this._drawingContext;
-//			if (!context)  return;
-
             context = stageComponent.context;
             if(!context) return;
             // TODO - Get values from app settings
@@ -937,7 +939,13 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 			{
 				//console.log( "single selection" );
 				elt = eltArray[0];
-				this.drawElementBoundingBox(elt, context, stageInfo);
+                bounds3D = this.drawElementBoundingBox(elt, context, stageInfo);
+                this._selectionCtr = [0,0,0];
+                dir = vecUtils.vecSubtract(2, bounds3D[1], bounds3D[3]);
+                ctr = vecUtils.vecNormalize(2, dir, vecUtils.vecDist(2, bounds3D[1], bounds3D[3])/2);
+
+                this._selectionCtr[0] += ctr[0] - this.application.ninja.stage.userContentLeft;
+                this._selectionCtr[1] += ctr[1] - this.application.ninja.stage.userContentTop;
 			}
 			else
 			{
@@ -1008,7 +1016,7 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 
                     if(rect) {
                         context.lineWidth = 2;
-                        // draw the rectangle
+                        // draw the multi-selection rectangle
                         context.beginPath();
 
                         pt = MathUtils.makeDimension3(rect.getPoint(3));
@@ -1025,8 +1033,8 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                         context.closePath();
                         context.stroke();
 
-                        var dir = vecUtils.vecSubtract(2, bounds3D[1], bounds3D[3]);
-                        var ctr = vecUtils.vecNormalize(2, dir, vecUtils.vecDist(2, bounds3D[1], bounds3D[3])/2);
+                        dir = vecUtils.vecSubtract(2, bounds3D[1], bounds3D[3]);
+                        ctr = vecUtils.vecNormalize(2, dir, vecUtils.vecDist(2, bounds3D[1], bounds3D[3])/2);
 
                         this._selectionCtr[0] += ctr[0] - this.application.ninja.stage.userContentLeft;
                         this._selectionCtr[1] += ctr[1] - this.application.ninja.stage.userContentTop;
@@ -1048,7 +1056,6 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                             elt = eltArray[i];
                             bounds = this.drawElementBoundingBox(elt, context, stageInfo);
                             for (j=0;  j<4;  j++) {
-//                                pt = bounds[j];
                                 pt = MathUtils.transformAndDivideHomogeneousPoint( bounds[j], ssMatInv );
 
                                 if (!minPt) {
@@ -1075,10 +1082,8 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                         var x0 = minPt[0],  y0 = minPt[1],  z0 = minPt[2],
                             x1 = maxPt[0],  y1 = maxPt[1],  z1 = maxPt[2];
 
-                        this._selectionCtr = [x0, y0, z0];
-                        this._selectionCtr[0] += (x1-x0)/2;
-                        this._selectionCtr[1] += (y1-y0)/2;
-                        this._selectionCtr[2] += (z1-z0)/2;
+                        var stageWorldCtr = [ 0.5*(x0 + x1),  0.5*(y0 + y1), 0.5*(z0 + z1) ];
+                        this._selectionCtr = MathUtils.transformAndDivideHomogeneousPoint( stageWorldCtr, ssMat );
 
                         // get the 8 corners of the parallelpiped in world space
                         var wc = new Array();   // wc == world cube
@@ -1209,7 +1214,7 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 		}
 	},
 
-
+    /* Currently, we are not drawing the element normal indicator. */
 	drawElementNormal:
 	{
 		value: function( elt )
@@ -1257,6 +1262,7 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 
     drawStageOutline : {
         value: function() {
+//            console.log("drawStageOutline");
             var context = this.application.ninja.stage.gridContext;
             var stage = this.application.ninja.stage;
             var stageRoot = this.application.ninja.currentDocument.model.documentRoot;
@@ -1324,10 +1330,9 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 
 	draw3DCompass : {
 		value: function() {
-			// set the element to be the viewport object - temporarily
-			var tmpCanvas = this.application.ninja.stage.canvas;
+//            console.log("draw3DCompass");
+			var tmpCanvas = this.application.ninja.stage.layoutCanvas;
 			var tmpStage = this.application.ninja.currentDocument.model.documentRoot;
-//			this.viewUtils.pushViewportObj( tmpCanvas );
 
 			// save the source space object and set to the target object
 			var saveSource = this._sourceSpaceElt;
@@ -1366,8 +1371,7 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 			var zO = glmat4.multiplyVec3( resMat, zAxis, []);
 
 			var saveContext = this.getDrawingSurfaceElement();
-			//this.setDrawingSurfaceElement(window.stageManager.layoutCanvas);
-			this.setDrawingSurfaceElement(this.application.ninja.stage.layoutCanvas);
+			this.setDrawingSurfaceElement(this.application.ninja.stage.gridCanvas);
 			// clear just the 3d compass area
 			this._drawingContext.save();
 			this._drawingContext.rect(10, origTop-60, 100, 110);
@@ -1400,7 +1404,6 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
 			this.drawArrowHead(rO, zO);
 
 			// restore the state
-//			this.viewUtils.popViewportObj();
 			this._drawingContext.restore();
 			this.setDrawingSurfaceElement(saveContext);
 			this._lineColor = saveColor;
