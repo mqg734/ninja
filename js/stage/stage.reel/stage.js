@@ -29,10 +29,10 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 </copyright> */
 
-var Montage = 	require("montage/core/core").Montage,
+var Montage = require("montage/core/core").Montage,
     Component = require("montage/ui/component").Component,
     drawUtils = require("js/helper-classes/3D/draw-utils").DrawUtils,
-    vecUtils = 	require("js/helper-classes/3D/vec-utils").VecUtils;
+    vecUtils = require("js/helper-classes/3D/vec-utils").VecUtils;
 
 exports.Stage = Montage.create(Component, {
 
@@ -76,13 +76,13 @@ exports.Stage = Montage.create(Component, {
 
     _resizeCanvases: { value: true },
 
-	viewUtils: {
-		get: function()  {  return this.stageDeps.viewUtils;  }
-	},
+    viewUtils: {
+        get: function()  {  return this.stageDeps.viewUtils;  }
+    },
 
-	snapManager: {
-		get: function()  {  return this.stageDeps.snapManager;  }
-	},
+    snapManager: {
+        get: function()  {  return this.stageDeps.snapManager;  }
+    },
 
     drawUtils: {
         get: function()  {  return this.stageDeps.drawUtils;  }
@@ -389,7 +389,7 @@ exports.Stage = Montage.create(Component, {
                 this._canvas.width = this._layoutCanvas.width = this._drawingCanvas.width = this._gridCanvas.width = this.bindingView.width = this.element.offsetWidth - 11;
                 this._canvas.height = this._layoutCanvas.height = this._drawingCanvas.height = this._gridCanvas.height =  this.bindingView.height = this.element.offsetHeight - 11;// - 26 - 26;
 
-				if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
+                if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
                     this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
                 }
                 this.needsDrawSelection = true;
@@ -982,16 +982,16 @@ exports.Stage = Montage.create(Component, {
             this._drawingContext.strokeStyle = this._canvasDrawingPrefs.color;
             this._drawingContext.lineWidth = this._canvasDrawingPrefs.thickness;
 
-			//this._drawingContext.strokeRect(x,y,w,h);
-			this._drawingContext.beginPath();
-			this._drawingContext.moveTo( x0 + 0.5, y0 + 0.5 );
-			this._drawingContext.lineTo( x1 + 0.5, y1 + 0.5 );
-			this._drawingContext.lineTo( x2 + 0.5, y2 + 0.5 );
-			this._drawingContext.lineTo( x3 + 0.5, y3 + 0.5 );
-			this._drawingContext.lineTo( x0 + 0.5, y0 + 0.5 );
+            //this._drawingContext.strokeRect(x,y,w,h);
+            this._drawingContext.beginPath();
+            this._drawingContext.moveTo( x0 + 0.5, y0 + 0.5 );
+            this._drawingContext.lineTo( x1 + 0.5, y1 + 0.5 );
+            this._drawingContext.lineTo( x2 + 0.5, y2 + 0.5 );
+            this._drawingContext.lineTo( x3 + 0.5, y3 + 0.5 );
+            this._drawingContext.lineTo( x0 + 0.5, y0 + 0.5 );
 
-			this._drawingContext.closePath();
-			this._drawingContext.stroke();
+            this._drawingContext.closePath();
+            this._drawingContext.stroke();
 
             this._drawingContext.font = "10px sans-serif";
             this._drawingContext.textAlign = "right";
@@ -1121,9 +1121,9 @@ exports.Stage = Montage.create(Component, {
 
     /**
      * draw3DProjectedAndUnprojectedRectangles -- Draws a 3D rectangle used for marquee selection.
-     *												Draws a second rectangle to indicate the projected
-     *												location of the created geometry
-     *												Uses the _canvasDrawingPrefs for line thickness and color
+     * Draws a second rectangle to indicate the projected
+     * location of the created geometry
+     * Uses the _canvasDrawingPrefs for line thickness and color
      *
      * @params: x, y, w, h
      */
@@ -1133,24 +1133,24 @@ exports.Stage = Montage.create(Component, {
             this._drawingContext.strokeStyle = this._canvasDrawingPrefs.color;
             this._drawingContext.lineWidth = this._canvasDrawingPrefs.thickness;
 
-			this._drawingContext.beginPath();
-			var	x0 = unProjPts[0][0],		y0 = unProjPts[0][1],
-				x1 = unProjPts[1][0],		y1 = unProjPts[1][1],
-				x2 = unProjPts[2][0],		y2 = unProjPts[2][1],
-				x3 = unProjPts[3][0],		y3 = unProjPts[3][1];
-			this._drawingContext.moveTo( x0 + 0.5, y0 + 0.5 );
-			this._drawingContext.lineTo( x1 + 0.5, y1 + 0.5 );
-			this._drawingContext.lineTo( x2 + 0.5, y2 + 0.5 );
-			this._drawingContext.lineTo( x3 + 0.5, y3 + 0.5 );
-			this._drawingContext.lineTo( x0 + 0.5, y0 + 0.5 );
+            this._drawingContext.beginPath();
+            var x0 = unProjPts[0][0],   y0 = unProjPts[0][1],
+                x1 = unProjPts[1][0],   y1 = unProjPts[1][1],
+                x2 = unProjPts[2][0],   y2 = unProjPts[2][1],
+                x3 = unProjPts[3][0],   y3 = unProjPts[3][1];
+            this._drawingContext.moveTo( x0 + 0.5, y0 + 0.5 );
+            this._drawingContext.lineTo( x1 + 0.5, y1 + 0.5 );
+            this._drawingContext.lineTo( x2 + 0.5, y2 + 0.5 );
+            this._drawingContext.lineTo( x3 + 0.5, y3 + 0.5 );
+            this._drawingContext.lineTo( x0 + 0.5, y0 + 0.5 );
 
-			this._drawingContext.closePath();
-			this._drawingContext.stroke();
+            this._drawingContext.closePath();
+            this._drawingContext.stroke();
 
             this.stageDeps.snapManager.drawDashedLine( projPts[0], projPts[1], this._drawingContext );
-			this.stageDeps.snapManager.drawDashedLine( projPts[1], projPts[2], this._drawingContext );
-			this.stageDeps.snapManager.drawDashedLine( projPts[2], projPts[3], this._drawingContext );
-			this.stageDeps.snapManager.drawDashedLine( projPts[3], projPts[0], this._drawingContext );
+            this.stageDeps.snapManager.drawDashedLine( projPts[1], projPts[2], this._drawingContext );
+            this.stageDeps.snapManager.drawDashedLine( projPts[2], projPts[3], this._drawingContext );
+            this.stageDeps.snapManager.drawDashedLine( projPts[3], projPts[0], this._drawingContext );
 
             this._drawingContext.font = "10px sans-serif";
             this._drawingContext.textAlign = "right";
@@ -1249,14 +1249,14 @@ exports.Stage = Montage.create(Component, {
                 {
                     var w = this._canvas.width,
                         h = this._canvas.height;
-					var globalPt = [w/2, h/2, 0];
+                    var globalPt = [w/2, h/2, 0];
 
                     this.stageDeps.viewUtils.setStageZoom( globalPt,  value/100 );
 
                     //TODO - Maybe move to mediator.
-					var newVal = value/100.0;
-					if (newVal >= 1)
-						this.currentDocument.model.views.design.iframe.style.zoom = value/100;
+                    var newVal = value/100.0;
+                    if (newVal >= 1)
+                        this.currentDocument.model.views.design.iframe.style.zoom = value/100;
 
                     this.updatedStage = true;
 
@@ -1266,35 +1266,35 @@ exports.Stage = Montage.create(Component, {
         }
     },
 
-	getPlaneForView:
-	{
-		value: function( side )
-		{
-			var plane = [0,0,1,0];
+    getPlaneForView:
+    {
+        value: function( side )
+        {
+            var plane = [0,0,1,0];
             switch(side)
-			{
+            {
                 case "top":
-					plane = [0,1,0,0];
- 					plane[3] = this.currentDocument.model.documentRoot.offsetHeight / 2.0;
+                    plane = [0,1,0,0];
+                    plane[3] = this.currentDocument.model.documentRoot.offsetHeight / 2.0;
                    break;
 
                 case "side":
-					plane = [1,0,0,0];
- 					plane[3] = this.currentDocument.model.documentRoot.offsetWidth / 2.0;
+                    plane = [1,0,0,0];
+                    plane[3] = this.currentDocument.model.documentRoot.offsetWidth / 2.0;
                    break;
 
                 case "front":
                     plane = [0,0,1,0];
                     break;
 
-				default:
-					console.log( "unrecognized view in snapManager.getPlaneForView: " + side );
-					break;
+                default:
+                    console.log( "unrecognized view in snapManager.getPlaneForView: " + side );
+                    break;
             }
 
-			return plane;
-		}
-	},
+            return plane;
+        }
+    },
 
     setStageView: {
         value: function(side) {
@@ -1325,7 +1325,7 @@ exports.Stage = Montage.create(Component, {
                     drawUtils.drawXY = isDrawingGrid;
                     break;
             }
-			workingPlane = this.getPlaneForView( side );
+            workingPlane = this.getPlaneForView( side );
 
             this.stageDeps.viewUtils.setMatrixForElement(currentDoc, mat, false);
 
