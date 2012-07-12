@@ -392,19 +392,19 @@ exports.Stage = Montage.create(Component, {
 				if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
                     this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
                 }
-                // Hack for now until a full component
-                this.drawLayout = true; //this.layout.draw();
+                this.needsDrawSelection = true;
+                this.drawLayout = true;
                 if(this.currentDocument && (this.currentDocument.currentView === "design")) {
-                    this.draw3DInfo = true; //this.layout.draw3DInfo(true);
+                    this.draw3DInfo = true;
                 }
             } else if(this.updatedStage) {
                 if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
                     this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
                 }
                 this.needsDrawSelection = true;
-                this.drawLayout = true; //this.layout.draw();
+                this.drawLayout = true;
                 this.updatePlanes = true;
-                this.draw3DInfo = true; //this.layout.draw3DInfo(true);
+                this.draw3DInfo = true;
             }
         }
     },
@@ -779,6 +779,11 @@ exports.Stage = Montage.create(Component, {
             this.showSelectionBounds = true;
             this.needsDrawSelection = true;
             this.drawLayout = true;
+            // TODO - Some tools currently depend on selectionDrawn event at this point, so force a draw here
+            if(this.drawNow) {
+                this.draw();
+                this.drawNow = false;
+            }
         }
     },
 
