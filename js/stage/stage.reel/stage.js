@@ -1003,17 +1003,10 @@ exports.Stage = Montage.create(Component, {
             this._drawingContext.fillText("X: " + Math.round(userCoor[0]), x0+textWidth+4, y0 - 5);
             this._drawingContext.fillText("Y: " + Math.round(userCoor[1]), x0-5, y0+10);
 
-            // When in 'Shift Mode' there is no Mouse Position for that event
-            var txtX, txtY = 0;
-            var point = this.toUserContentCoordinates(x2, y2);
-            txtX = point[0];
-            txtY = point[1];
-
-
             var h = Math.round(Math.abs(y2-y0));
             var w = Math.round(Math.abs(x2-x0));
-            this._drawingContext.fillText("H: " + h, txtX + 38, txtY - 4);
-            this._drawingContext.fillText("W: " + w, txtX - 5, txtY + 12);
+            this._drawingContext.fillText("H: " + h, x2 + 38, y2 - 4);
+            this._drawingContext.fillText("W: " + w, x2 - 5, y2 + 12);
         }
     },
 
@@ -1206,16 +1199,10 @@ exports.Stage = Montage.create(Component, {
             this._drawingContext.fillText("X: " + Math.round(userCoor[0]), x0+textWidth+4, y0 - 5);
             this._drawingContext.fillText("Y: " + Math.round(userCoor[1]), x0-5, y0+10);
 
-            // When in 'Shift Mode' there is no Mouse Position for that event
-            var txtX, txtY = 0;
-            var point = webkitConvertPointFromPageToNode(this.canvas, new WebKitPoint(event.pageX, event.pageY));
-            (point.x) ? txtX = point.x : txtX = this.application.ninja.toolsData.selectedToolInstance.downPoint.x;
-            (point.y) ? txtY = point.y : txtY = this.application.ninja.toolsData.selectedToolInstance.downPoint.y;
-
             var h = Math.round(Math.abs(y1-y0));
             var w = Math.round(Math.abs(x1-x0));
-            this._drawingContext.fillText("H: " + h, txtX + 38, txtY - 4);
-            this._drawingContext.fillText("W: " + w, txtX - 5, txtY + 12);
+            this._drawingContext.fillText("H: " + h, x1 + 38, y1 - 4);
+            this._drawingContext.fillText("W: " + w, x1 - 5, y1 + 12);
 
             this._drawingContext.strokeStyle = origStrokeStyle;
             this._drawingContext.lineWidth = origLineWidth;
