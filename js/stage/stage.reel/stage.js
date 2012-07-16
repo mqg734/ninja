@@ -453,22 +453,7 @@ exports.Stage = Montage.create(Component, {
                 }
                 //TODO Set this variable in the needs draw so that it does not have to be calculated again for each draw for selection change
                 if(this.application.ninja.selectedElements.length) {
-//                    console.log("drawSelection");
-                    // drawUtils.drawSelectionBounds handles the single selection case as well,
-                    // so we don't have to special-case the single selection case.
-                    // TODO drawUtils.drawSelectionBounds expects an array of elements.
-                    // TODO If we use the routine to only draw selection bounds, then we may want to change it
-                    // TODO to work on _element instead of re-creating a new Array here.
-                    var selArray = new Array();
-
-                    for(var i = 0; this.application.ninja.selectedElements[i];i++) {
-                        var curElement = this.application.ninja.selectedElements[i];
-
-                        // Add element to array that is used to calculate 3d-bounding box of all elements
-                        selArray.push( curElement );
-                    }
-
-                    drawUtils.drawSelectionBounds(selArray, this.showSelectionBounds);
+                    drawUtils.drawSelectionBounds(this.application.ninja.selectedElements, this.showSelectionBounds);
                 }
                 NJevent("selectionDrawn");
                 this.needsDrawTool = null;
