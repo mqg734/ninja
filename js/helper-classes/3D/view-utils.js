@@ -801,13 +801,15 @@ exports.ViewUtils = Montage.create(Component, {
                     bl = parent.elementModel.getProperty("border-left-width");
                     bt = parent.elementModel.getProperty("border-top-width");
                 } else {
-                    pS = elt.ownerDocument.defaultView.getComputedStyle(parent);
-                    border = parseInt(pS.getPropertyValue("border"));
-                    bl = parseInt(pS.getPropertyValue("border-left-width"));
-                    bt = parseInt(pS.getPropertyValue("border-top-width"));
-                    parent.elementModel.setProperty("border", border);
-                    parent.elementModel.setProperty("border-left-width", bl);
-                    parent.elementModel.setProperty("border-top-width", bt);
+                    if(elt.ownerDocument.defaultView) {
+                        pS = elt.ownerDocument.defaultView.getComputedStyle(parent, null);
+                        border = parseInt(pS.getPropertyValue("border"));
+                        bl = parseInt(pS.getPropertyValue("border-left-width"));
+                        bt = parseInt(pS.getPropertyValue("border-top-width"));
+                        parent.elementModel.setProperty("border", border);
+                        parent.elementModel.setProperty("border-left-width", bl);
+                        parent.elementModel.setProperty("border-top-width", bt);
+                    }
                 }
 
                 if(border) {
