@@ -1292,7 +1292,6 @@ var stylesController = exports.StylesController = Montage.create(Component, {
 
     ///// Get Matrix From Element
     ///// Returns the matrix from an element's -webkit-transform
-    //// TODO - This routine should eventually check for other transform styles, i.e., rotateX, translateZ, etc.
 
     getMatrixFromElement : {
         value: function(element, isStage) {
@@ -1302,6 +1301,11 @@ var stylesController = exports.StylesController = Montage.create(Component, {
 
             if (xformStr) {
                 var index1 = xformStr.indexOf( "matrix3d(");
+                // If style does not contain 'matrix3d', compute matrix3d from rotateY, translateZ, etc.
+                if((index1 === -1) && element.ownerDocument.defaultView) {
+                    xformStr = element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue("-webkit-transform");
+                    index1 = xformStr.indexOf( "matrix3d(");
+                }
                 if (index1 >= 0) {
                     index1 += 9;    // do not include 'matrix3d('
                     var index2 = xformStr.indexOf( ")", index1 );

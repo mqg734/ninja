@@ -227,9 +227,6 @@ exports.ElementMediator = Montage.create(Component, {
 
             for (var i = 0, item; item = els[i]; i++) {
                 item.elementModel.controller["setProperty"](item, p, value[i], eventType, source);
-                if(p === "left" || p === "top" || p === "width" || p === "height") {
-                    item.elementModel.setProperty("offsetCache", false);
-                }
             }
 
             NJevent("element" + eventType, {type:"setProperty", source:source, data:{"els":els, "prop":p, "value":value}, redraw:null});
@@ -247,9 +244,6 @@ exports.ElementMediator = Montage.create(Component, {
 
             elements.forEach(function (elementObject) {
                 elementObject.element.elementModel.controller["setProperties"](elementObject.element, elementObject.properties);
-                if(elementObject.properties.left || elementObject.properties.top || elementObject.properties.width || elementObject.properties.height) {
-                    elementObject.element.elementModel.setProperty("offsetCache", false);
-                }
             });
 
             if (eventType !== "Changing") {
@@ -283,7 +277,6 @@ exports.ElementMediator = Montage.create(Component, {
 
             for (var i = 0, item; item = elements[i]; i++) {
                 item.element.elementModel.controller["set3DProperties"](item.element, item.properties, update3DModel);
-                item.element.elementModel.setProperty("offsetCache", false);
             }
 
             /*
@@ -498,7 +491,6 @@ exports.ElementMediator = Montage.create(Component, {
         value:function (el, mat, isChanging, source) {
             var dist = el.elementModel.controller["getPerspectiveDist"](el);
             el.elementModel.controller["set3DProperties"](el, {mat:mat, dist:dist}, !isChanging);
-            el.elementModel.setProperty("offsetCache", false);
 
             if (isChanging) {
                 NJevent("elementChanging", {type:"setMatrix", source:source, data:{"els":[el], "prop":"matrix", "value":mat}, redraw:null});

@@ -96,7 +96,7 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
     _selectionCtr : {value: null, writable: true },
 
     // Properties that require element planes to be updated
-    _updatePlaneProps : {value: ["matrix", "left", "top", "width", "height"], writable: false },
+    _updatePlaneProps : {value: ["matrix", "left", "top", "width", "height", "border", "border-width", "border-style", "-webkit-transform"], writable: false },
     _recalculateScrollOffsets : { value: false },
 
     ///////////////////////////////////////////////////////////////////////
@@ -309,9 +309,20 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                     plane,
                     changed = false,
                     elt,
+                    eltModel,
                     adjustStagePadding = !isChanging || (event.detail.data.prop !== "matrix");
                 for(var i=0; i < len; i++) {
                     elt = els[i];
+                    eltModel = elt.elementModel;
+                    eltModel.setProperty("offsetCache", false);
+
+                    if(eltModel.selection !== "body") {
+                        if(isChanging) {
+                            eltModel.props3D.matrix3d = null;
+                        } else {
+                            eltModel.props3D.init(elt, false);
+                        }
+                    }
                     plane = elt.elementModel.props3D.elementPlane;
                     if(plane) {
                         plane.init();
