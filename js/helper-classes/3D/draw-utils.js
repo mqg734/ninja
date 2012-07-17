@@ -957,7 +957,7 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
             // TODO - Currently, the stage draws its own selection bounds for single selection case
             if (len === 1)
             {
-                console.log( "single selection" );
+//                console.log( "single selection" );
                 elt = eltArray[0];
                 bounds3D = this.drawElementBoundingBox(elt, context, stageInfo);
                 this._selectionCtr = [0,0,0];

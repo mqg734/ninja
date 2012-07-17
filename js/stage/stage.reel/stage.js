@@ -406,6 +406,11 @@ exports.Stage = Montage.create(Component, {
                 this.updatePlanes = true;
                 this.draw3DInfo = true;
             }
+            if(this._needsDrawTool) {
+//                console.log("drawTool");
+                this.application.ninja.toolsData.selectedToolInstance.HandleMouseMove(this._needsDrawTool);
+                this.needsDrawTool = null;
+            }
         }
     },
 
@@ -456,7 +461,6 @@ exports.Stage = Montage.create(Component, {
                     drawUtils.drawSelectionBounds(this.application.ninja.selectedElements, this.showSelectionBounds);
                 }
                 NJevent("selectionDrawn");
-                this.needsDrawTool = null;
                 this.needsDrawSelection = false;
             }
         }
@@ -467,11 +471,6 @@ exports.Stage = Montage.create(Component, {
         value: function() {
             this.resizeCanvases = false;
             this.updatedStage = false;
-            if(this._needsDrawTool) {
-//                console.log("drawTool");
-                this.application.ninja.toolsData.selectedToolInstance.HandleMouseMove(this._needsDrawTool);
-                this.needsDrawTool = null;
-            }
         }
     },
 
