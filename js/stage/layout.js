@@ -67,19 +67,11 @@ exports.Layout = Montage.create(Component, {
             return this._currentDocument;
         },
         set : function(value) {
-            if (value === this._currentDocument) {// || value.getProperty("currentView") !== "design") {
-                return;
-            }
-
-            drawUtils._eltArray.length = 0;
-            drawUtils._planesArray.length = 0;
-
-            this._currentDocument = value;
-
-            if(!value) {
-
-            } else if(this._currentDocument.currentView === "design") {
-                this.elementsToDraw = this._currentDocument.model.documentRoot.childNodes;
+            if (value !== this._currentDocument) {
+                this._currentDocument = value;
+                if(this._currentDocument && this._currentDocument.currentView === "design") {
+                    this.elementsToDraw = Array.prototype.slice.call(this._currentDocument.model.documentRoot.childNodes, 0);
+                }
             }
         }
     },
@@ -113,19 +105,6 @@ exports.Layout = Montage.create(Component, {
             this.ctx = this.canvas.getContext("2d");
             this.ctx.lineWidth = this.ctxLineWidth;
             this.ctx.fillStyle = this.drawFillColor;
-
-            this.eventManager.addEventListener("selectionChange", this, false);
-            this.eventManager.addEventListener("elementsRemoved", this, false);
-        }
-    },
-
-    // Redraw stage only once after all deletion is completed
-    handleElementsRemoved: {
-        value: function(event) {
-            this.stage.drawLayout = true;
-            this.stage.updatePlanes = true;
-            this.stage.draw3DInfo = true;
-            this.stage.needsDrawSelection = true;
         }
     },
 
@@ -133,13 +112,16 @@ exports.Layout = Montage.create(Component, {
         value: function(event) {
             var containerIndex;
 
+            // Clear the elements to draw
+            this.elementsToDraw.length = 0;
+
             if(this.currentDocument === null){
                 return;
             }
 
             if(this.currentDocument.currentView === "design"){
-                // Make an array copy of the line node list which is not an array like object
-                this.domTree = this.application.ninja.currentDocument.model.views.design.getLiveNodeList(true);
+                // Make an array copy of the live node list which is not an array like object
+                this.domTree = this.currentDocument.model.views.design.getLiveNodeList(true);
                 // Index of the current container
                 containerIndex = this.domTree.indexOf(this.currentDocument.model.domContainer);
 
@@ -151,8 +133,6 @@ exports.Layout = Montage.create(Component, {
                     this.domTree = Array.prototype.slice.call(this.domTree[containerIndex].childNodes, 0);
                 }
             }
-            // Clear the elements to draw
-            this.elementsToDraw.length = 0;
 
             // Draw the non selected elements
             if(!event.detail.isDocument) {

@@ -764,6 +764,7 @@ exports.Stage = Montage.create(Component, {
             this.showSelectionBounds = true;
             this.needsDrawSelection = true;
             this.drawLayout = true;
+            this.layout.handleSelectionChange(event);
             // TODO - Some tools currently depend on selectionDrawn event at this point, so force a draw here
             if(this.drawNow) {
                 this.draw();

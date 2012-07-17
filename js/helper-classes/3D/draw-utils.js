@@ -211,7 +211,12 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                 this.addElement(elements);
             }
 
-            this.drawWorkingPlane();
+            // Redraw stage only once after all addition is completed
+            var stage = this.application.ninja.stage;
+            stage.drawLayout = true;
+            stage.updatePlanes = true;
+            stage.draw3DInfo = true;
+            stage.needsDrawSelection = true;
         }
     },
 
@@ -228,7 +233,12 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
                 this.removeElement(elements);
             }
 
-            this.drawWorkingPlane();
+            // Redraw stage only once after all deletion is completed
+            var stage = this.application.ninja.stage;
+            stage.drawLayout = true;
+            stage.updatePlanes = true;
+            stage.draw3DInfo = true;
+            stage.needsDrawSelection = true;
         }
     },
 
@@ -947,7 +957,7 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
             // TODO - Currently, the stage draws its own selection bounds for single selection case
             if (len === 1)
             {
-                //console.log( "single selection" );
+                console.log( "single selection" );
                 elt = eltArray[0];
                 bounds3D = this.drawElementBoundingBox(elt, context, stageInfo);
                 this._selectionCtr = [0,0,0];
