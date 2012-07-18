@@ -47,6 +47,8 @@ exports.Stage = Montage.create(Component, {
     switchedFromCodeDoc: { value : false },
 
     drawLayout: { value : false },
+    updatePlanes: { value : false },
+    draw3DInfo: { value : false },
 
     // TO REVIEW
     zoomFactor: {
@@ -95,7 +97,21 @@ exports.Stage = Montage.create(Component, {
         set: function(value) {
             this._resizeCanvases = value;
             if(value) {
-                this.needsDraw = true;
+                // TODO GET THE SCROLL SIZE FROM THE CSS -- 11 px
+                this._canvas.width = this._layoutCanvas.width = this._drawingCanvas.width = this._gridCanvas.width = this.bindingView.width = this.element.offsetWidth - 11;
+                this._canvas.height = this._layoutCanvas.height = this._drawingCanvas.height = this._gridCanvas.height =  this.bindingView.height = this.element.offsetHeight - 11;// - 26 - 26;
+
+                if(this.currentDocument) {
+                    if(this.currentDocument.currentView === "design") {
+                        this.drawLayout = true;
+                        this.updatePlanes = true;
+                        this.draw3DInfo = true;
+                        this.needsDrawSelection = true;
+                    }
+                    if(this.currentDocument.model && this.currentDocument.model.documentRoot) {
+                        this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
+                    }
+                }
             }
         }
     },
@@ -109,7 +125,17 @@ exports.Stage = Montage.create(Component, {
         set: function(value) {
             this._updatedStage = value;
             if(value) {
-                this.needsDraw = true;
+                if(this.currentDocument) {
+                    if(this.currentDocument.currentView === "design") {
+                        this.drawLayout = true;
+                        this.updatePlanes = true;
+                        this.draw3DInfo = true;
+                        this.needsDrawSelection = true;
+                    }
+                    if(this.currentDocument.model && this.currentDocument.model.documentRoot) {
+                        this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
+                    }
+                }
             }
         }
     },
@@ -384,28 +410,6 @@ exports.Stage = Montage.create(Component, {
 
     willDraw: {
         value: function() {
-            if(this.resizeCanvases) {
-                // TODO GET THE SCROLL SIZE FROM THE CSS -- 11 px
-                this._canvas.width = this._layoutCanvas.width = this._drawingCanvas.width = this._gridCanvas.width = this.bindingView.width = this.element.offsetWidth - 11;
-                this._canvas.height = this._layoutCanvas.height = this._drawingCanvas.height = this._gridCanvas.height =  this.bindingView.height = this.element.offsetHeight - 11;// - 26 - 26;
-
-                if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
-                    this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
-                }
-                this.needsDrawSelection = true;
-                this.drawLayout = true;
-                if(this.currentDocument && (this.currentDocument.currentView === "design")) {
-                    this.draw3DInfo = true;
-                }
-            } else if(this.updatedStage) {
-                if(this.currentDocument && this.currentDocument.model && this.currentDocument.model.documentRoot) {
-                    this.currentDocument.model.documentRoot.elementModel.setProperty("offsetCache", false);
-                }
-                this.needsDrawSelection = true;
-                this.drawLayout = true;
-                this.updatePlanes = true;
-                this.draw3DInfo = true;
-            }
             if(this._needsDrawTool) {
 //                console.log("drawTool");
                 this.application.ninja.toolsData.selectedToolInstance.HandleMouseMove(this._needsDrawTool);
