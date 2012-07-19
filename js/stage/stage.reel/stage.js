@@ -422,9 +422,6 @@ exports.Stage = Montage.create(Component, {
         value: function() {
             if(!this.currentDocument) return;
 
-            var clearedSelectionCanvas = false;
-            var clearedLayoutCanvas = false;
-
             if(this.draw3DInfo) {
 //                console.log("draw3DInfo");
                 if(this.updatePlanes) {
@@ -442,23 +439,16 @@ exports.Stage = Montage.create(Component, {
                 this.draw3DInfo = false;
             }
             if(this.drawLayout) {
-                if(!clearedLayoutCanvas) {
-                    this.layout.clearCanvas();
-                }
+                this.layout.clearCanvas();
 //                console.log("drawLayout");
                 this.layout.draw();
                 this.drawLayout = false;
             }
 
-            if(this.currentDocument.model.domContainer !== this.currentDocument.model.documentRoot) {
-                this.clearCanvas();
-                clearedSelectionCanvas = true;
-                this.drawDomContainer(this.currentDocument.model.domContainer);
-            }
-
             if(this._needsDrawSelection) {
-                if(!clearedSelectionCanvas) {
-                    this.clearCanvas();
+                this.clearCanvas();
+                if(this.currentDocument.model.domContainer !== this.currentDocument.model.documentRoot) {
+                    this.drawDomContainer(this.currentDocument.model.domContainer);
                 }
                 //TODO Set this variable in the needs draw so that it does not have to be calculated again for each draw for selection change
                 if(this.application.ninja.selectedElements.length) {
