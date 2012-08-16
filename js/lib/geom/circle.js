@@ -36,9 +36,9 @@ var drawUtils       = require("js/helper-classes/3D/draw-utils").DrawUtils;
 var vecUtils        = require("js/helper-classes/3D/vec-utils").VecUtils;
 
 ///////////////////////////////////////////////////////////////////////
-// Class GLCircle
-//      GL representation of a circle.
-//      Derived from class GLGeomObj
+// Class Circle
+//      representation of a circle (both canvas 2d and 3d/WebGL)
+//      Derived from class GeomObj
 //      The position and dimensions of the stroke, fill, and inner Radius should be in pixels
 ///////////////////////////////////////////////////////////////////////
 exports.Circle = Object.create(GeomObj, {
@@ -56,140 +56,49 @@ exports.Circle = Object.create(GeomObj, {
     _innerRadius: { value : 0, writable: true },
     _ovalHeight: { value : 4.0, writable: true },
     _strokeStyle: { value : "Solid", writable: true },
-    _aspectRatio: { value : 1.0, writable: true },
 
     init: {
-        value: function(world, xOffset, yOffset, width, height, strokeSize, strokeColor, fillColor, innerRadius, strokeMaterial, fillMaterial, strokeStyle) {
-            if(arguments.length > 0) {
+        value: function(world, xOffset, yOffset, width, height,
+                        innerRadius, strokeOptions, fillOptions) {
+            if (arguments.length > 0) {
+                this._world = world;
                 this._width = width;
                 this._height = height;
                 this._xOffset = xOffset;
                 this._yOffset = yOffset;
-                this._ovalHeight = 2.0 * this._radius;
 
-                this._strokeWidth = strokeSize;
-                this._innerRadius = innerRadius;
-                this._strokeColor = strokeColor;
-                this._fillColor = fillColor;
-
-                this._strokeStyle = strokeStyle;
+                this._strokeWidth = strokeOptions.strokeSize;
+                this.innerRadius = innerRadius;
+                this._strokeStyle = strokeOptions.strokeStyle;
 
                 this._matrix = Matrix.I(4);
-                //this._matrix[12] = xOffset;
-                //this._matrix[13] = yOffset;
+
+                this.initMaterialsAndColors(strokeOptions.stroke, strokeOptions.strokeMaterial,
+                                            fillOptions.fill, fillOptions.fillMaterial);
             }
-
-            this.m_world = world;
-
-            if(strokeMaterial) {
-                this._strokeMaterial = strokeMaterial.dup();
-            }
-
-            if(fillMaterial) {
-                this._fillMaterial = fillMaterial.dup();
-            }
-
-            this.initColors();
         }
     },
 
     ///////////////////////////////////////////////////////////////////////
     // Property Accessors
     ///////////////////////////////////////////////////////////////////////
-    // TODO - Use getters/setters in the future
-    getStrokeWidth: {
-        value: function() {
-            return this._strokeWidth;
-        }
-    },
-
-    setStrokeWidth: {
-        value: function(w) {
-            this._strokeWidth = w;
-        }
-    },
-
-    getStrokeMaterial: {
-        value: function() {
-            return this._strokeMaterial;
-        }
-    },
-
-    setStrokeMaterial: {
-        value: function(m) {
-            this._strokeMaterial = m;
-        }
-    },
-
-    getFillMaterial: {
-        value: function() {
-            return this._fillMaterial;
-        }
-    },
-
-    setFillMaterial: {
-        value: function(m) {
-            this._fillMaterial = m;
-        }
-    },
-
-    getRadius: {
-        value: function() {
+    radius: {
+        get: function() {
             return this._radius;
-        }
-    },
-
-    setRadius: {
-        value: function(r) {
+        },
+        set: function(r) {
             this._radius = r;
+            this.needsDraw = true;
         }
     },
 
-    getInnerRadius: {
-        value: function() {
-            return this._innerRadius;
-        }
-    },
-
-    setInnerRadius: {
-        value: function(r) {
-            this._innerRadius = r;
-        }
-    },
-
-    getStrokeStyle: {
-        value: function() {
-            return this._strokeStyle;
-        }
-    },
-
-    setStrokeStyle: {
-        value: function(s) {
-            this._strokeStyle = s;
-        }
-    },
-
-    getWidth: {
-        value: function() {
-            return this._width;
-        }
-    },
-
-    setWidth: {
-        value: function(w) {
-            this._width = w;
-        }
-    },
-
-    getHeight: {
-        value: function() {
-            return this._height;
-        }
-    },
-
-    setHeight: {
-        value: function(h) {
-            this._height = h;
+    innerRadius: {
+        get: function() {
+            return this._innerRadius*100;
+        },
+        set: function(r) {
+            this._innerRadius = r/100;
+            this.needsDraw = true;
         }
     },
 
@@ -199,32 +108,11 @@ exports.Circle = Object.create(GeomObj, {
         }
     },
 
-    ///////////////////////////////////////////////////////////////////////
-    // update the "color of the material
-    getFillColor: {
+    getGeomName: {
         value: function() {
-            return this._fillColor;
+            return "Oval";
         }
     },
-
-//    setFillColor: {
-//        value: function(c) {
-//            this._fillColor = c;
-//        }
-//    },
-
-    getStrokeColor: {
-        value: function() {
-            return this._strokeColor;
-        }
-    },
-
-//    setStrokeColor: {
-//        value: function(c) {
-//            this._strokeColor = c;
-//        }
-//    },
-    ///////////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////////
     // Methods
@@ -552,7 +440,7 @@ exports.Circle = Object.create(GeomObj, {
         value: function() {
             // get the world
             var world = this.getWorld();
-            if (!world)  throw( "null world in buildBuffers" );
+            if (!world)  throw( "null world in render" );
 
              // get the context
             var ctx = world.get2DContext();
@@ -564,7 +452,7 @@ exports.Circle = Object.create(GeomObj, {
 
             // create the matrix
             var lineWidth = this._strokeWidth;
-            var innerRad  = this.getInnerRadius();
+            var innerRad  = this._innerRadius;
             var xScale = 0.5*this._width - lineWidth,
                 yScale = 0.5*this._height - lineWidth;
 
@@ -940,6 +828,16 @@ exports.Circle = Object.create(GeomObj, {
             //console.log( "remap" );
             //console.log( "uRange: " + uMin + " => " + uMax );
             //console.log( "vRange: " + vMin + " => " + vMax );
+        }
+    },
+
+    // bounds - a Rectangle instance to hold the [left, top, width, height] points
+    // cop - center of projection of the container canvas
+    getElementBounds: {
+        value: function(bounds, cop) {
+            var xCtr = cop[0] + this._xOffset,                  yCtr = cop[1] + this._yOffset;
+            var xLeft = xCtr - 0.5*this.getWidth(),             yTop = yCtr - 0.5*this.getHeight();
+            bounds.set(xLeft, yTop, this.getWidth(), this.getHeight());
         }
     }
 });

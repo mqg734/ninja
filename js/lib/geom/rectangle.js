@@ -34,232 +34,99 @@ var ShapePrimitive =    require("js/lib/geom/shape-primitive").ShapePrimitive;
 var MaterialsModel = require("js/models/materials-model").MaterialsModel;
 
  ///////////////////////////////////////////////////////////////////////
-// Class GLRectangle
-//      GL representation of a rectangle.
+// Class Rectangle
+//      representation of a rectangle (both canvas 2d and 3d/WebGL)
 //      Derived from class GeomObj
 ///////////////////////////////////////////////////////////////////////
 exports.Rectangle = Object.create(GeomObj, {
-    // CONSTANTS
-    N_TRIANGLES: { value : 15, writable: false },       // TODO - This is not being used anywhere. Remove?
-
-    //if (!MaterialsModel)
-    //  MaterialsModel = require("js/models/materials-model").MaterialsModel;
 
     ///////////////////////////////////////////////////////////////////////
     // Instance variables
     ///////////////////////////////////////////////////////////////////////
-    _width: { value : 2.0, writable: true },
-    _height: { value : 2.0, writable: true },
-    _xOffset: { value : 0, writable: true },
-    _yOffset: { value : 0, writable: true },
-
     _tlRadius: { value : 0, writable: true },
     _trRadius: { value : 0, writable: true },
     _blRadius: { value : 0, writable: true },
     _brRadius: { value : 0, writable: true },
 
-    _strokeWidth: { value : 0.25, writable: true },
-    _strokeStyle: { value : "Solid", writable: true },
-
     init: {
-        value: function(world, xOffset, yOffset, width, height, strokeSize, strokeColor, fillColor,
-                      tlRadius, trRadius, blRadius, brRadius, strokeMaterial, fillMaterial, strokeStyle) {
-            this.m_world = world;
-
+        value: function(world, xOffset, yOffset, width, height,
+                        tlRadius, trRadius, blRadius, brRadius, strokeOptions, fillOptions) {
             if (arguments.length > 0) {
+                this._world = world;
                 this._width = width;
                 this._height = height;
                 this._xOffset = xOffset;
                 this._yOffset = yOffset;
 
-                this._strokeWidth = strokeSize;
-                this._strokeColor = strokeColor;
-                this._fillColor = fillColor;
+                this._strokeWidth = strokeOptions.strokeSize;
 
-                this.setTLRadius(tlRadius);
-                this.setTRRadius(trRadius);
-                this.setBLRadius(blRadius);
-                this.setBRRadius(brRadius);
+                this.tlRadius = tlRadius;
+                this.trRadius = trRadius;
+                this.blRadius = blRadius;
+                this.brRadius = brRadius;
 
-                this._strokeStyle = strokeStyle;
+                this._strokeStyle = strokeOptions.strokeStyle;
 
-            this._matrix = Matrix.I(4);
+                this._matrix = Matrix.I(4);
+
+                this.initMaterialsAndColors(strokeOptions.stroke, strokeOptions.strokeMaterial,
+                                            fillOptions.fill, fillOptions.fillMaterial);
             }
-
-            // the overall radius includes the fill and the stroke.  separate the two based on the stroke width
-            //  this._fillRad = this._radius - this._strokeWidth;
-            //    var err = 0.05;
-            var err = 0;
-            this._fillWidth = this._width - this._strokeWidth  + err;
-            this._fillHeight = this._height - this._strokeWidth + err;
-
-            this._materialAmbient  = [0.2, 0.2, 0.2,  1.0];
-            this._materialDiffuse  = [0.4, 0.4, 0.4,  1.0];
-            this._materialSpecular = [0.4, 0.4, 0.4,  1.0];
-
-            if(strokeMaterial) {
-                this._strokeMaterial = strokeMaterial.dup();
-            }
-
-            if(fillMaterial) {
-                this._fillMaterial = fillMaterial.dup();
-            }
-
-            this.initColors();
         }
     },
 
     ///////////////////////////////////////////////////////////////////////
     // Property Accessors
     ///////////////////////////////////////////////////////////////////////
-    // TODO - Use getters/setters in the future
-    getStrokeWidth: {
-        value: function() {
-            return this._strokeWidth;
-        }
-    },
-
-    setStrokeWidth: {
-        value: function(w) {
-            this._strokeWidth = w;
-        }
-    },
-
-    getStrokeMaterial: {
-        value: function() {
-            return this._strokeMaterial;
-        }
-    },
-
-    setStrokeMaterial: {
-        value: function(m) {
-            this._strokeMaterial = m;
-        }
-    },
-
-    getFillMaterial: {
-        value: function() {
-            return this._fillMaterial;
-        }
-    },
-
-    setFillMaterial: {
-        value: function(m) {
-            this._fillMaterial = m;
-        }
-    },
-    ///////////////////////////////////////////////////////////////////////
-    // update the "color of the material
-    getFillColor: {
-        value: function() {
-            return this._fillColor;
-        }
-    },
-
-//    setFillColor: {
-//        value: function(c) {
-//            this._fillColor = c;
-//        }
-//    },
-    getStrokeColor: {
-        value: function() {
-            return this._strokeColor;
-        }
-    },
-
-//    setStrokeColor: {
-//        value: function(c) {
-//            this._strokeColor = c;
-//        }
-//    },
-    ///////////////////////////////////////////////////////////////////////
-    getTLRadius: {
-        value: function() {
+    tlRadius: {
+        get: function() {
             return this._tlRadius;
-        }
-    },
-
-    setTLRadius: {
-        value: function(r) {
+        },
+        set: function(r) {
             this._tlRadius = Math.min(r, (this._height - this._strokeWidth)/2, (this._width - this._strokeWidth)/2);
+            this.needsDraw = true;
         }
     },
 
-    getTRRadius: {
-        value: function() {
+    trRadius: {
+        get: function() {
             return this._trRadius;
-        }
-    },
-
-    setTRRadius: {
-        value: function(r) {
+        },
+        set: function(r) {
             this._trRadius = Math.min(r, (this._height - this._strokeWidth)/2, (this._width - this._strokeWidth)/2);
+            this.needsDraw = true;
         }
     },
 
-    getBLRadius: {
-        value: function() {
+    blRadius: {
+        get: function() {
             return this._blRadius;
-        }
-    },
-
-    setBLRadius: {
-        value: function(r) {
+        },
+        set: function(r) {
             this._blRadius = Math.min(r, (this._height - this._strokeWidth)/2, (this._width - this._strokeWidth)/2);
+            this.needsDraw = true;
         }
     },
 
-    getBRRadius: {
-        value: function() {
+    brRadius: {
+        get: function() {
             return this._brRadius;
-        }
-    },
-
-    setBRRadius: {
-        value: function(r) {
+        },
+        set: function(r) {
             this._brRadius = Math.min(r, (this._height - this._strokeWidth)/2, (this._width - this._strokeWidth)/2);
-        }
-    },
-
-    getStrokeStyle: {
-        value: function() {
-            return this._strokeStyle;
-        }
-    },
-
-    setStrokeStyle: {
-        value: function(s) {
-            this._strokeStyle = s;
-        }
-    },
-
-    getWidth: {
-        value: function() {
-            return this._width;
-        }
-    },
-
-    setWidth: {
-        value: function(w) {
-            this._width = w;
-        }
-    },
-
-    getHeight: {
-        value: function() {
-            return this._height;
-        }
-    },
-
-    setHeight: {
-        value: function(h) {
-            this._height = h;
+            this.needsDraw = true;
         }
     },
 
     geomType: {
         value: function() {
             return this.GEOM_TYPE_RECTANGLE;
+        }
+    },
+
+    getGeomName: {
+        value: function() {
+            return "Rectangle";
         }
     },
 
@@ -894,6 +761,18 @@ exports.Rectangle = Object.create(GeomObj, {
                 uvs[iuv] = 0.5*(vrts[ivrt]/this._rectHeight + 1);
                 iuv++;  ivrt += 2;
             }
+        }
+    },
+
+    // bounds - a Rectangle instance to hold the [left, top, width, height] points
+    // cop - center of projection of the container canvas
+    getElementBounds: {
+        value: function(bounds, cop) {
+            var xCtr = cop[0] + this._xOffset,                  yCtr = cop[1] - this._yOffset;
+            var xLeft = xCtr - 0.5*this.getWidth(),             yTop = yCtr - 0.5*this.getHeight();
+            var xDist = cop[0] - xLeft,                         yDist = cop[1] - yTop;
+            var xOff = 0.5*this.getWorld().getViewportWidth() - xDist,    yOff  = 0.5*this.getWorld().getViewportHeight() - yDist;
+            bounds.set(xOff, yOff, this.getWidth(), this.getHeight());
         }
     }
 });

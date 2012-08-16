@@ -266,9 +266,15 @@ exports.Properties = Montage.create(Component, {
             var customPI, currentValue, isRoot = this.application.ninja.selectionController.isDocument,
                 l, t, h, w, lvu, tvu, hvu, wvu;
 
-            this.elementName.value = el.elementModel.selection;
-            this.elementId.value = el.getAttribute("id") || "";
-            this.elementClass.value = el.getAttribute("class");
+            if(el.elementModel && el.elementModel.shapeModel && el.elementModel.shapeModel.selection) {
+                this.elementName.value = el.elementModel.selection;
+                this.elementId.value = "";
+                this.elementClass.value = "";
+            } else {
+                this.elementName.value = el.elementModel.selection;
+                this.elementId.value = el.getAttribute("id") || "";
+                this.elementClass.value = el.getAttribute("class");
+            }
 
             this.positionSize.disablePosition = isRoot;
             this.threeD.disableTranslation = isRoot;

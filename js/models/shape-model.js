@@ -34,27 +34,33 @@ var Montage = require("montage/core/core").Montage,
 
 exports.ShapeModel = Montage.create(Component, {
 
+    // This model is for the world only.
+    // If a geom obj is selected within this world, the containing canvas's
+    // elementModel's type, selection, controller and pi will be updated to use the geom obj's values.
+    // Else, the elementModel will report the GLWorld's values.
+
     shapeCount:             { value: 0 },
     useWebGl:               { value: false },
-    animate:                { value: true },
-
     GLWorld:                { value: null },
-    GLGeomObj:              { value: null },
+    selection:              { value: null },
 
-    strokeSize:             { value: null },
-    strokeStyle:            { value: null },
-    strokeStyleIndex:       { value: null },
+    // update element model's selection to match selected geomObj's values
+    updateSelection: {
+        value: function(elementModel, geomObj) {
+            if(geomObj) {
+                this.selection = geomObj;
+                this.GLGeomObj = geomObj;
+                elementModel.selection = geomObj.getGeomName();
+                elementModel.pi = geomObj.getGeomName() + "Pi";
+            } else {
+                this.selection = null;
+                this.GLGeomObj = this.GLWorld.getGeomRoot();
+                elementModel.selection = "ShapeWorld";
+                elementModel.pi = "ShapeWorldPi";
+            }
+        }
+    },
 
-    // Line-specific
-    slope:                  { value: null },
-
-    // Oval-specific
-    innerRadius:            { value: null },
-
-    // Rectangle-specific
-    tlRadius:               { value: null },
-    trRadius:               { value: null },
-    blRadius:               { value: null },
-    brRadius:               { value: null }
-
+    animate:                { value: true },
+    GLGeomObj:              { value: null }
 });

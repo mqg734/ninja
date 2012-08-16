@@ -76,6 +76,7 @@ var HitRecord = exports.HitRecord = Object.create(Object.prototype,
     _planarHit: { value: false, writable: true },
     _snapBoundaryIndex : { value: -1, writable: true },     // this used for snap align to object boundaries
     _isQuadPt :{ value: false, writable: true },    // used for snapping to an object's quadrant point
+    _geomObj :{ value: null, writable: true },    // geom object that was snapped to within a shape world.
 
     ///////////////////////////////////////////////////////////////////////
     // Property accessors
@@ -120,6 +121,8 @@ var HitRecord = exports.HitRecord = Object.create(Object.prototype,
     getUseQuadPoint : { value: function()           {  return this._isQuadPt;               }},
     setUseQuadPoint : { value: function(q)          {this._isQuadPt = q;                    }},
 
+    getGeomObj: { value: function()           {  return this._geomObj;               }},
+    setGeomObj: { value: function(o)          {this._geomObj = o;                    }},
     ///////////////////////////////////////////////////////////////////////
     // Methods
     ///////////////////////////////////////////////////////////////////////

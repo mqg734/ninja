@@ -115,6 +115,10 @@ BrushStroke.prototype.geomType = function () {
     return this.GEOM_TYPE_BRUSH_STROKE;
 };
 
+BrushStroke.prototype.getGeomName = function () {
+    return "BrushStroke";
+};
+
 BrushStroke.prototype.setDrawingTool = function (tool) {
     this._drawingTool = tool;
 };

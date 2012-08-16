@@ -155,6 +155,7 @@ var elmo = exports.ElementModel = Montage.create(Montage, {
 
     isShape:        { value: false },
     shapeModel:     { value: null },
+    reportAsShape:  { value: false },
     isIn2DSnapCache : { value: false },
 
     isComponent:    { value: false },

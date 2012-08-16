@@ -174,7 +174,12 @@ exports.SelectionController = Montage.create(Component, {
 
     selectElement: {
         value: function(element) {
-            if(this.findSelectedElement(element) === -1) {
+            if(element.elementModel && element.elementModel.shapeModel && element.elementModel.shapeModel.selection &&
+               (element.uuid === this.currentDocument.model.domContainer.uuid)) {
+                this.executeSelectElement(element);
+            } else if(element.uuid === this.currentDocument.model.domContainer.uuid) {
+                this.executeSelectElement();
+            } else if(this.findSelectedElement(element) === -1) {
 
                 if(this.application.ninja.currentDocument.inExclusion(element) !== -1){
                     if(this.isDocument) return;     // If the stage is already selected do nothing.

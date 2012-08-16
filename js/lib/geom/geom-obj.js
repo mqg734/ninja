@@ -32,8 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
 var MaterialsModel = require("js/models/materials-model").MaterialsModel;
 
 ///////////////////////////////////////////////////////////////////////
-// Class GLGeomObj
-//      Super class for all geometry classes
+// Class GeomObj
+//      Super class for all geometry classes (both canvas 2d and 3d/WebGL)
 ///////////////////////////////////////////////////////////////////////
 exports.GeomObj = Object.create(Object.prototype, {
     ///////////////////////////////////////////////////////////////////////
@@ -58,7 +58,16 @@ exports.GeomObj = Object.create(Object.prototype, {
     _child: { value : undefined, writable: true },
     _parent: { value : undefined, writable: true },
 
-    m_world: { value : null, writable: true },
+    _world: { value : null, writable: true },
+    _needsDraw: { value : false, writable: true },
+
+    _width: { value : 2.0, writable: true },
+    _height: { value : 2.0, writable: true },
+    _xOffset: { value : 0, writable: true },
+    _yOffset: { value : 0, writable: true },
+
+    _strokeWidth: { value : 0.25, writable: true },
+    _strokeStyle: { value : "Solid", writable: true },
 
     // stroke and fill colors
     _strokeColor: { value : [0, 0, 0, 0], writable: true },
@@ -85,13 +94,22 @@ exports.GeomObj = Object.create(Object.prototype, {
     ///////////////////////////////////////////////////////////////////////
     getWorld: {
         value: function() {
-            return this.m_world;
+            return this._world;
         }
     },
 
     setWorld: {
         value: function(world) {
-            this.m_world = world;
+            this._world = world;
+        }
+    },
+
+    world: {
+        get: function() {
+            return this._world;
+        },
+        set: function(world) {
+            this._world = world;
         }
     },
 
@@ -155,9 +173,63 @@ exports.GeomObj = Object.create(Object.prototype, {
         }
     },
 
+    getWidth: {
+        value: function() {
+            return this._width;
+        }
+    },
+
+    setWidth: {
+        value: function(w) {
+            this._width = w;
+        }
+    },
+
+    getHeight: {
+        value: function() {
+            return this._height;
+        }
+    },
+
+    setHeight: {
+        value: function(h) {
+            this._height = h;
+        }
+    },
+
     geomType: {
         value: function() {
             return this.GEOM_TYPE_UNDEFINED;
+        }
+    },
+
+    getGeomName: {
+        value: function() {
+            return "Undefined GeomObj";
+        }
+    },
+
+    getStrokeMaterial: {
+        value: function() {
+            return this._strokeMaterial;
+        }
+    },
+
+    setStrokeMaterial: {
+        value: function(m) {
+            this._strokeMaterial = m;
+        }
+    },
+
+    getFillMaterial: {
+        value: function() {
+            return this._fillMaterial;
+        }
+    },
+
+    setFillMaterial: {
+        value: function(m) {
+            this._fillMaterial = m;
         }
     },
 
@@ -191,9 +263,21 @@ exports.GeomObj = Object.create(Object.prototype, {
         }
     },
 
+    getFillColor: {
+        value: function() {
+            return this._fillColor;
+        }
+    },
+
     setFillColor: {
         value: function(c) {
             this.setMaterialColor(c, "fill");
+        }
+    },
+
+    getStrokeColor: {
+        value: function() {
+            return this._strokeColor;
         }
     },
 
@@ -202,9 +286,166 @@ exports.GeomObj = Object.create(Object.prototype, {
             this.setMaterialColor(c, "stroke");
         }
     },
+
+    getStrokeWidth: {
+        value: function() {
+            return this._strokeWidth;
+        }
+    },
+
+    setStrokeWidth: {
+        value: function(w) {
+            this._strokeWidth = w;
+        }
+    },
+
+    strokeSize: {
+        get: function() {
+            return this._strokeWidth;
+        },
+        set: function(w) {
+            this._strokeWidth = w;
+            this.needsDraw = true;
+        }
+    },
+
+    getStrokeStyle: {
+        value: function() {
+            return this._strokeStyle;
+        }
+    },
+
+    setStrokeStyle: {
+        value: function(s) {
+            this._strokeStyle = s;
+        }
+    },
+
+    useWebGl: {
+        get: function() {
+            return this.getWorld().isWebGL();
+        }
+    },
+
+    animate: {
+        get: function() {
+            return this.getWorld()._previewAnimation;
+        },
+        set: function(value) {
+            this.getWorld()._previewAnimation = value;
+            if(value) {
+                this.getWorld().restartRenderLoop();
+            } else {
+                this.getWorld()._canvas.task.stop();
+            }
+        }
+    },
+
+    needsDraw: {
+        get: function() {
+            return this._needsDraw;
+        },
+        set: function(value) {
+            // TODO - Need to hook this up with RDGE's draw cycle;
+//            this._needsDraw = value;
+//            if(value) {
+                this.update();
+//            }
+        }
+    },
+
+    update: {
+        value: function() {
+            this.buildBuffers();
+            this.world.render();    // TODO - should this be this.render() instead?
+        }
+    },
+
     ///////////////////////////////////////////////////////////////////////
     // Methods
     ///////////////////////////////////////////////////////////////////////
+    initMaterialsAndColors: {
+        value: function(stroke, strokeMaterial, fill, fillMaterial) {
+            if(strokeMaterial) {
+                if(stroke.color && stroke.color.gradientMode) {
+                    if(strokeMaterial === "Flat") {
+                        if(stroke.color.gradientMode === "radial") {
+                            this._strokeMaterial = Object.create(MaterialsModel.getMaterial("Radial Gradient")).dup();
+                        } else {
+                            this._strokeMaterial = Object.create(MaterialsModel.getMaterial("Linear Gradient")).dup();
+                        }
+                    } else {
+                        this._strokeMaterial = Object.create(MaterialsModel.getMaterial(strokeMaterial)).dup();
+                    }
+                    if(this._strokeMaterial.gradientType) {
+                        this._strokeColor = {gradientMode:this._strokeMaterial.gradientType, color:stroke.color.stops};
+                    } else {
+                        this._strokeColor = stroke.webGlColor || [0,0,0,1];
+                    }
+                } else {
+                    this._strokeMaterial = Object.create(MaterialsModel.getMaterial(strokeMaterial)).dup();
+                    if(this._strokeMaterial.gradientType) {
+                        this._strokeColor = {gradientMode:this._strokeMaterial.gradientType, color:this._strokeMaterial.getColorStops()};
+                    } else {
+                        this._strokeColor = stroke.webGlColor || [0,0,0,1];
+                    }
+                }
+            } else {
+                switch (stroke.colorMode) {
+                    case 'nocolor':
+                        this.setStrokeColor(null);
+                        break;
+                    case 'gradient':
+                        this.setStrokeColor({gradientMode:stroke.color.gradientMode, color:stroke.color.stops});
+                        break;
+                    default:
+                        this.setStrokeColor(stroke.webGlColor || [0,0,0,1]);
+                }
+            }
+
+            if(this.canFill) {
+                if(fillMaterial) {
+                    if(fill.color && fill.color.gradientMode) {
+                        if(fillMaterial === "Flat") {
+                            if(fill.color.gradientMode === "radial") {
+                                this._fillMaterial = Object.create(MaterialsModel.getMaterial("Radial Gradient")).dup();
+                            } else {
+                                this._fillMaterial = Object.create(MaterialsModel.getMaterial("Linear Gradient")).dup();
+                            }
+                        } else {
+                            this._fillMaterial = Object.create(MaterialsModel.getMaterial(fillMaterial)).dup();
+                        }
+                        if(this._fillMaterial.gradientType) {
+                            this._fillColor = {gradientMode:this._fillMaterial.gradientType, color:fill.color.stops};
+                        } else {
+                            this._fillColor = fill.webGlColor || [1,1,1,1];
+                        }
+                    } else {
+                        this._fillMaterial = Object.create(MaterialsModel.getMaterial(fillMaterial)).dup();
+                        if(this._fillMaterial.gradientType) {
+                            this._fillColor = {gradientMode:this._fillMaterial.gradientType, color:this._fillMaterial.getColorStops()};
+                        } else {
+                            this._fillColor = fill.webGlColor || [1,1,1,1];
+                        }
+                    }
+                } else {
+                    switch (fill.colorMode) {
+                        case 'nocolor':
+                            this.setFillColor(null);
+                            break;
+                        case 'gradient':
+                            this.setFillColor({gradientMode:fill.color.gradientMode, color:fill.color.stops});
+                            break;
+                        default:
+                            this.setFillColor(fill.webGlColor || [1,1,1,1]);
+                    }
+                }
+            }
+            
+            this.initColors();
+        }
+    },
+
     initColors: {
         value: function() {
             if(this._strokeColor && this._strokeMaterial) {
@@ -461,14 +702,14 @@ exports.GeomObj = Object.create(Object.prototype, {
         }
     },
 
-    setMatrix: {
-        value: function(mat) {
-            var gl = this.getWorld().getGLContext();
-            if (gl) {
-                gl.uniformMatrix4fv(this.getWorld().getShaderProgram().mvMatrixUniform, false, new Float32Array(mat));
-            }
-        }
-    },
+//    setMatrix: {
+//        value: function(mat) {
+//            var gl = this.getWorld().getGLContext();
+//            if (gl) {
+//                gl.uniformMatrix4fv(this.getWorld().getShaderProgram().mvMatrixUniform, false, new Float32Array(mat));
+//            }
+//        }
+//    },
 
     getGLCenter: {
         value: function() {

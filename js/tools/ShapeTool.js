@@ -89,6 +89,7 @@ exports.ShapeTool = Montage.create(DrawingTool, {
                 if( (w > 0) && (h > 0) ) {
                     if(!this._useExistingCanvas()) {
                         canvas = document.application.njUtils.make("canvas", {"data-RDGE-id": NJUtils.generateRandom()}, this.application.ninja.currentDocument);
+                        canvas.elementModel.reportAsShape = true;
 
                         var styles = document.application.njUtils.stylesFromDraw(canvas, w, h, this.drawData);
                         this.application.ninja.elementMediator.addElements(canvas, styles);
@@ -168,16 +169,13 @@ exports.ShapeTool = Montage.create(DrawingTool, {
 
     getGLWorld: {
         value: function (canvas, use3D) {
-            var world;
-
-            world = this.application.ninja.elementMediator.getShapeProperty(canvas, "GLWorld");
-            if(!world) {
+            if(canvas.elementModel && canvas.elementModel.shapeModel && canvas.elementModel.shapeModel.GLWorld) {
+                return canvas.elementModel.shapeModel.GLWorld;
+            } else {
                 // create all the GL stuff
-                world = new World(canvas, use3D);
-                this.application.ninja.elementMediator.setShapeProperty(canvas, "GLWorld", world);
+                canvas.elementModel.shapeModel.GLWorld = new World(canvas, use3D);
+                return canvas.elementModel.shapeModel.GLWorld;
             }
-
-            return world;
         }
     },
 

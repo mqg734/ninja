@@ -230,6 +230,10 @@ GLSubpath.prototype.geomType = function () {
     return this.GEOM_TYPE_CUBIC_BEZIER;
 };
 
+GLSubpath.prototype.getGeomName = function () {
+    return "Subpath";
+};
+
 GLSubpath.prototype.setWidth = function (newW) {
     var strokeWidth = this._strokeWidth;
     var halfStrokeWidth = strokeWidth*0.5;

@@ -227,6 +227,23 @@ var RadialGradientMaterial = function RadialGradientMaterial() {
             this.setProperty("u_colorStop" + (n + 1), position);
         }
     };
+
+    // Only Linear Gradient and Radial Gradient have gradient data.
+    this.getColorStops = function() {
+        var stop, position, css, colors = [];
+
+        for (var i=1; i <= 4; i++) {
+            stop = this.getProperty('u_color'+i);
+            position = this.getProperty('u_colorStop'+i);
+            css = 'rgba(' + stop[0]*255 + ', '
+                          + stop[1]*255 + ', '
+                          + stop[2]*255 + ', '
+                          + stop[3] +')';
+            colors.push({value:{css:css, r:stop[0]*255, g:stop[1]*255, b:stop[2]*255, a:stop[3]}, position:position*100});
+        }
+
+        return colors;
+    };
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////

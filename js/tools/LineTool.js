@@ -33,12 +33,10 @@ var Montage =   require("montage/core/core").Montage,
     ShapeTool = require("js/tools/ShapeTool").ShapeTool,
     DrawingToolBase = require("js/tools/drawing-tool-base").DrawingToolBase,
     NJUtils = require("js/lib/NJUtils").NJUtils,
-    TagTool = require("js/tools/TagTool").TagTool,
     ShapesController =  require("js/controllers/elements/shapes-controller").ShapesController,
-    ShapeModel = require("js/models/shape-model").ShapeModel;
-
-var Line = require("js/lib/geom/line").Line;
-var MaterialsModel = require("js/models/materials-model").MaterialsModel;
+    ShapeModel = require("js/models/shape-model").ShapeModel,
+    Line = require("js/lib/geom/line").Line,
+    MaterialsModel = require("js/models/materials-model").MaterialsModel;
 
 exports.LineTool = Montage.create(ShapeTool, {
     _toolID: { value: "lineTool" },
@@ -117,6 +115,7 @@ exports.LineTool = Montage.create(ShapeTool, {
                     if(!this._useExistingCanvas()) {
 
                         canvas = document.application.njUtils.make("canvas", {"data-RDGE-id": NJUtils.generateRandom()}, this.application.ninja.currentDocument);
+                        canvas.elementModel.reportAsShape = true;
 
                         var styles = document.application.njUtils.stylesFromDraw(canvas, w, h, this.drawData);
                         this.application.ninja.elementMediator.addElements(canvas, styles);
@@ -251,33 +250,21 @@ exports.LineTool = Montage.create(ShapeTool, {
     },
 
     RenderShape: {
-        value: function (w, h, planeMat, midPt, canvas, slope, xAdj, yAdj)
-        {
-
-            var strokeStyleIndex = this.options.strokeStyleIndex;
-            var strokeStyle = this.options.strokeStyle;
-            var strokeSize = this._strokeSize;
-
+        value: function (w, h, planeMat, midPt, canvas, slope, xAdj, yAdj) {
             var left = Math.round(midPt[0] - 0.5*w);
             var top = Math.round(midPt[1] - 0.5*h);
 
-            var strokeColor = this.options.stroke.webGlColor;
-            // for default stroke and fill/no materials
-            var strokeMaterial = null;
-            var strokeM = null;
+            var strokeOptions = {};
+            strokeOptions.strokeStyleIndex = this.options.strokeStyleIndex;
+            strokeOptions.strokeStyle = this.options.strokeStyle;
 
-            if(this.options.use3D)
-            {
-                strokeM = this.options.strokeMaterial;
-                if(strokeM)
-                {
-                    strokeMaterial = Object.create(MaterialsModel.getMaterial(strokeM));
-                }
-                if (strokeMaterial && this.options.stroke.color && (strokeMaterial.gradientType === this.options.stroke.color.gradientMode)) {
-                    strokeColor = {gradientMode:strokeMaterial.gradientType, color:this.options.stroke.color.stops};
-                } else {
-                strokeColor = ShapesController.getMaterialColor(strokeM) || strokeColor;
-            }
+            strokeOptions.strokeSize = ShapesController.GetValueInPixels(this.options.strokeSize.value, this.options.strokeSize.units, h);
+
+            strokeOptions.stroke = this.options.stroke;
+            strokeOptions.strokeMaterial = null;
+
+            if(this.options.use3D) {
+                strokeOptions.strokeMaterial = this.options.strokeMaterial;
             }
 
             var world = this.getGLWorld(canvas, this.options.use3D);
@@ -286,40 +273,19 @@ exports.LineTool = Montage.create(ShapeTool, {
             var yOffset = (canvas.height/2 - (top - canvas.offsetTop + h/2));
 
             var line = Object.create(Line, {});
-            line.init(world, xOffset, yOffset, w, h, slope, strokeSize, strokeColor, strokeMaterial, strokeStyle, xAdj, yAdj);
+            line.init(world, xOffset, yOffset, w, h, slope, xAdj, yAdj, strokeOptions);
 
             world.addObject(line);
             world.render();
 
-            canvas.elementModel.shapeModel.shapeCount++;
-            if(canvas.elementModel.shapeModel.shapeCount === 1)
-            {
-//                canvas.elementModel.selection = "Line";
+            if(canvas.elementModel.reportAsShape) {
+                canvas.elementModel.selection = "Line";
                 canvas.elementModel.pi = "LinePi";
-                canvas.elementModel.shapeModel.strokeSize = this.options.strokeSize.value + " " + this.options.strokeSize.units;
-
-                canvas.elementModel.shapeModel.strokeStyleIndex = strokeStyleIndex;
-                canvas.elementModel.shapeModel.strokeStyle = strokeStyle;
-
                 canvas.elementModel.shapeModel.GLGeomObj = line;
-                canvas.elementModel.shapeModel.useWebGl = this.options.use3D;
-                canvas.elementModel.shapeModel.slope = slope;
-            }
-            else
-            {
-                // TODO - update the shape's info only.  shapeModel will likely need an array of shapes.
-            }
-
-            // TODO - This needs to be moved into geom obj's init routine instead of here
-            if(!strokeM) {
-                this.setColor(canvas, this.options.stroke, false, "lineTool");
-            }
-
-            if(canvas.elementModel.isShape)
-            {
                 this.application.ninja.selectionController.selectElement(canvas);
+            } else {
+                canvas.elementModel.shapeModel.updateSelection(canvas.elementModel, line);
             }
-
         }
     }
 });

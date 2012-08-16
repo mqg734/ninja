@@ -481,7 +481,7 @@ exports.MaterialsPopup = Montage.create(Component, {
             // declare the array to hold the results
             var rtnArray = [],
                 obj,
-                colorObj = ShapesController.getMaterialColor(material.getName());
+                colorObj = ShapesController.getMaterialColor(material);
 
                 this._propNames = ["gradient"];
                 this._propValues = ["gradient"];

@@ -43,9 +43,10 @@ exports.ShapesController = Montage.create(CanvasController, {
                 canvas,
                 m,
                 color;
+            // TODO - Replace all GLGeomObj.buildBuffers() and GLWorld.render() calls with something like needsDraw
             switch(p) {
                 case "strokeSize":
-                    this.setShapeProperty(el, "strokeSize", value);
+//                    this.setShapeProperty(el, "strokeSize", value);
                     var strokeInfo = njModule.NJUtils.getValueAndUnits(value);
                     val = this.GetValueInPixels(strokeInfo[0], strokeInfo[1]);
 
@@ -55,7 +56,8 @@ exports.ShapesController = Montage.create(CanvasController, {
                     if( (geomType > 0) && (geomType < 4) )
                     {
                         // Changing stroke size should grow/shrink the shape from the center.
-                        var delta = ~~(val - el.elementModel.shapeModel.GLGeomObj.getStrokeWidth()),
+//                        var delta = ~~(val - el.elementModel.shapeModel.GLGeomObj.getStrokeWidth()),
+                        var delta = ~~(val - el.elementModel.shapeModel.GLGeomObj.strokeSize),
                             ol = this.application.ninja.elementMediator.getProperty(el, "left", parseInt),
                             ot = this.application.ninja.elementMediator.getProperty(el, "top", parseInt),
                             ow = this.application.ninja.elementMediator.getProperty(el, "width", parseInt),
@@ -64,7 +66,7 @@ exports.ShapesController = Montage.create(CanvasController, {
 
                         if(geomType === 3)
                         {
-                            var slope = el.elementModel.shapeModel.slope;
+                            var slope = el.elementModel.shapeModel.GLGeomObj.slope;
                             // set the dimensions
                             if(slope === "horizontal")
                             {
@@ -80,7 +82,7 @@ exports.ShapesController = Montage.create(CanvasController, {
                             {
                                 var oldXAdj = el.elementModel.shapeModel.GLGeomObj.getXAdj();
                                 var oldYAdj = el.elementModel.shapeModel.GLGeomObj.getYAdj();
-                                var theta = Math.atan(el.elementModel.shapeModel.slope);
+                                var theta = Math.atan(slope);
                                 var xAdj = Math.abs((val/2)*Math.sin(theta));
                                 var yAdj = Math.abs((val/2)*Math.cos(theta));
                                 var dX = ~~(xAdj*2 - oldXAdj*2);
@@ -109,37 +111,21 @@ exports.ShapesController = Montage.create(CanvasController, {
                                         eventType, source);
 
                     }
-                    el.elementModel.shapeModel.GLGeomObj.setStrokeWidth(val);
+//                    el.elementModel.shapeModel.GLGeomObj.setStrokeWidth(val);
+                    el.elementModel.shapeModel.GLGeomObj.strokeSize = val;
                     el.elementModel.shapeModel.GLGeomObj.buildBuffers();
                     el.elementModel.shapeModel.GLWorld.render();
                     break;
                 case "innerRadius":
-                    this.setShapeProperty(el, "innerRadius", value);
-                    el.elementModel.shapeModel.GLGeomObj.setInnerRadius(val/100);
+                    el.elementModel.shapeModel.GLGeomObj.innerRadius = val;
                     el.elementModel.shapeModel.GLGeomObj.buildBuffers();
                     el.elementModel.shapeModel.GLWorld.render();
                     break;
                 case "tlRadius":
-                    this.setShapeProperty(el, "tlRadius", value);
-                    el.elementModel.shapeModel.GLGeomObj.setTLRadius(val);
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
-                    break;
                 case "trRadius":
-                    this.setShapeProperty(el, "trRadius", value);
-                    el.elementModel.shapeModel.GLGeomObj.setTRRadius(val);
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
-                    break;
                 case "blRadius":
-                    this.setShapeProperty(el, "blRadius", value);
-                    el.elementModel.shapeModel.GLGeomObj.setBLRadius(val);
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
-                    break;
                 case "brRadius":
-                    this.setShapeProperty(el, "brRadius", value);
-                    el.elementModel.shapeModel.GLGeomObj.setBRRadius(val);
+                    el.elementModel.shapeModel.GLGeomObj[p] = val;
                     el.elementModel.shapeModel.GLGeomObj.buildBuffers();
                     el.elementModel.shapeModel.GLWorld.render();
                     break;
@@ -211,13 +197,13 @@ exports.ShapesController = Montage.create(CanvasController, {
                 case "animate":
                     if(value)
                     {
-                        el.elementModel.shapeModel.animate = true;
+//                        el.elementModel.shapeModel.animate = true;
                         el.elementModel.shapeModel.GLWorld._previewAnimation = true;
                         el.elementModel.shapeModel.GLWorld.restartRenderLoop();
                     }
                     else
                     {
-                        el.elementModel.shapeModel.animate = false;
+//                        el.elementModel.shapeModel.animate = false;
                         el.elementModel.shapeModel.GLWorld._previewAnimation = false;
                         el.elementModel.shapeModel.GLWorld._canvas.task.stop();
                     }
@@ -335,9 +321,9 @@ exports.ShapesController = Montage.create(CanvasController, {
 
     getShapeProperty: {
         value: function(el, prop) {
-            if(el.elementModel && el.elementModel.shapeModel)
+            if(el.elementModel && el.elementModel.shapeModel && el.elementModel.shapeModel.GLGeomObj)
             {
-                return el.elementModel.shapeModel[prop];
+                return el.elementModel.shapeModel.GLGeomObj[prop];
             }
             else
             {
@@ -349,9 +335,9 @@ exports.ShapesController = Montage.create(CanvasController, {
 
     setShapeProperty: {
         value: function(el, prop, value) {
-            if(el.elementModel && el.elementModel.shapeModel)
+            if(el.elementModel && el.elementModel.shapeModel && el.elementModel.shapeModel.GLGeomObj)
             {
-                el.elementModel.shapeModel[prop] = value;
+                el.elementModel.shapeModel.GLGeomObj[prop] = value;
             }
             else
             {
@@ -748,7 +734,7 @@ exports.ShapesController = Montage.create(CanvasController, {
     isElementAShape: {
         value: function(el)
         {
-            return (el.elementModel && el.elementModel.isShape);
+            return (el.elementModel && el.elementModel.reportAsShape);
         }
     },
 
@@ -887,12 +873,9 @@ exports.ShapesController = Montage.create(CanvasController, {
         value: function(m)
         {
             var css,
-                colorObj,
-                material;
+                colorObj;
 
-            material = MaterialsModel.getMaterial(m);
-
-            css = material.getGradientData();
+            css = m.getGradientData();
 
             if(css)
             {

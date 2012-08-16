@@ -887,13 +887,34 @@ var DrawUtils = exports.DrawUtils = Montage.create(Component, {
      */
     drawElementBoundingBox: {
         value: function(elt, context, stageInfo) {
-            this.viewUtils.pushViewportObj( elt );
-            var bounds3D = this.viewUtils.getElementViewBounds3D( elt );
+            var bounds, cop, pt, geomObj,
+                bounds3D, tmpMat, tmpPt, localPt;
 
-            var tmpMat = this.viewUtils.getLocalToGlobalMatrix( elt );
+            if(elt.elementModel && elt.elementModel.shapeModel && elt.elementModel.shapeModel.selection) {
+                geomObj = elt.elementModel.shapeModel.selection;
+                this.viewUtils.pushViewportObj(elt);
+                cop = this.viewUtils.getCenterOfProjection();
+                bounds = Object.create(Rectangle, {});
+                geomObj.getElementBounds(bounds, cop);
+
+                bounds3D = new Array();
+                for (var i=0; i<4; i++) {
+                    pt = bounds.getPoint(i);
+                    pt[2] = 0; // z == 0
+                    bounds3D.push(pt);
+                }
+
+                tmpMat = this.viewUtils.getLocalToGlobalMatrix(elt);
+            } else {
+                this.viewUtils.pushViewportObj( elt );
+                bounds3D = this.viewUtils.getElementViewBounds3D( elt );
+
+                tmpMat = this.viewUtils.getLocalToGlobalMatrix( elt );
+            }
+
             for (var j=0;  j<4;  j++) {
-                var localPt = bounds3D[j];
-                var tmpPt = this.viewUtils.localToGlobal2(localPt, tmpMat);
+                localPt = bounds3D[j];
+                tmpPt = this.viewUtils.localToGlobal2(localPt, tmpMat);
 
                 if(stageInfo) {
                     tmpPt = vecUtils.vecScale(3, tmpPt, stageInfo.zoomFactor);

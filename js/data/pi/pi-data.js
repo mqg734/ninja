@@ -823,6 +823,26 @@ exports.PiData = Montage.create( Montage, {
                 ]
             }
         ]
+    },
+    ShapeWorldPi: {
+        value: [
+            {
+                label: "Shape World",
+
+                Section: [
+                    [
+                        {
+                            type: "checkbox",
+                            id: "useWebGl",
+                            prop: "useWebGl",
+                            defaultValue: false,
+                            value: "Use WebGL",
+                            checked: false
+                        }
+                    ]
+                ]
+            }
+        ]
     }
 });
 

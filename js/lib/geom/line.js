@@ -33,150 +33,50 @@ var GeomObj =           require("js/lib/geom/geom-obj").GeomObj;
 var ShapePrimitive =    require("js/lib/geom/shape-primitive").ShapePrimitive;
 var MaterialsModel = require("js/models/materials-model").MaterialsModel;
 ///////////////////////////////////////////////////////////////////////
-// Class GLLine
-//      GL representation of a line.
+// Class Line
+//      representation of a line (both canvas 2d and 3d/WebGL)
 //      Derived from class GeomObj
 ///////////////////////////////////////////////////////////////////////
 exports.Line = Object.create(GeomObj, {
     ///////////////////////////////////////////////////////////////////////
     // Instance variables
     ///////////////////////////////////////////////////////////////////////
-    _width: { value : 2.0, writable: true },
-    _height: { value : 2.0, writable: true },
-    _xOffset: { value : 0, writable: true },
-    _yOffset: { value : 0, writable: true },
 
-    // If line doesn't fit in canvas world, we had to grow the canvas by this much on either side
+    // If line doesn't fit in canvas world, we have to grow the canvas by this much on either side
     _xAdj: { value : 0, writable: true },
     _yAdj: { value : 0, writable: true },
 
     _slope: { value : 0, writable: true },
 
-    _strokeWidth: { value : 0.25, writable: true },
-    _strokeStyle: { value : "Solid", writable: true },
-
-    _scaleX: { value : 1.0, writable: true },
-    _scaleY: { value : 1.0, writable: true },
-
     canFill: { value : false, writable: false },
 
     init: {
-        value: function(world, xOffset, yOffset, width, height, slope, strokeSize, strokeColor, strokeMaterial, strokeStyle, xAdj, yAdj) {
+        value: function(world, xOffset, yOffset, width, height, slope, xAdj, yAdj, strokeOptions) {
             if (arguments.length > 0) {
+                this._world = world;
                 this._width = width;
                 this._height = height;
                 this._xOffset = xOffset;
                 this._yOffset = yOffset;
 
+                this._strokeWidth = strokeOptions.strokeSize;
+                this._strokeStyle = strokeOptions.strokeStyle;
+
                 this._xAdj = xAdj;
                 this._yAdj = yAdj;
-
                 this._slope = slope;
-                this._strokeWidth = strokeSize;
-                this._strokeColor = strokeColor;
 
-                this._strokeStyle = strokeStyle;
-                this._scaleX = (world.getViewportWidth())/(world.getViewportHeight());
+                this._matrix = Matrix.I(4);
+
+                this.initMaterialsAndColors(strokeOptions.stroke, strokeOptions.strokeMaterial,
+                                            null, null);
             }
-
-            this._strokeVerticesLen = 0;
-
-            this.m_world = world;
-
-            this._materialAmbient  = [0.2, 0.2, 0.2,  1.0];
-            this._materialDiffuse  = [0.4, 0.4, 0.4,  1.0];
-            this._materialSpecular = [0.4, 0.4, 0.4,  1.0];
-
-            if(strokeMaterial) {
-                this._strokeMaterial = strokeMaterial.dup();
-            }
-
-            this.initColors();
         }
     },
 
     ////////////////////////////////////////////////////////////////////////
     // Property Accessors
     ///////////////////////////////////////////////////////////////////////
-    // TODO - Use getters/setters in the future
-    getStrokeWidth: {
-        value: function() {
-            return this._strokeWidth;
-        }
-    },
-
-    setStrokeWidth: {
-        value: function(w) {
-            this._strokeWidth = w;
-        }
-    },
-
-    getStrokeMaterial: {
-        value: function() {
-            return this._strokeMaterial;
-        }
-    },
-
-    setStrokeMaterial: {
-        value: function(m) {
-            this._strokeMaterial = m;
-        }
-    },
-
-    getFillMaterial: {
-        value: function() {
-            return null;
-        }
-    },
-
-    getStrokeColor: {
-        value: function() {
-            return this._strokeColor;
-        }
-    },
-
-//    setStrokeColor: {
-//        value: function(c) {
-//            this._strokeColor = c;
-//        }
-//    },
-
-    getStrokeStyle: {
-        value: function() {
-            return this._strokeStyle;
-        }
-    },
-
-    setStrokeStyle: {
-        value: function(s) {
-            this._strokeStyle = s;
-        }
-    },
-
-    getWidth: {
-        value: function() {
-            return this._width;
-        }
-    },
-
-    setWidth: {
-        value: function(w) {
-            this._width = w;
-        }
-    },
-
-    getHeight: {
-        value: function() {
-            return this._height;
-        }
-    },
-
-    setHeight: {
-        value: function(h) {
-            this._height = h;
-        }
-    },
-
     getXAdj: {
         value: function() {
             return this._xAdj;
@@ -201,21 +101,25 @@ exports.Line = Object.create(GeomObj, {
         }
     },
 
-    getSlope: {
-        value: function() {
+    slope: {
+        get: function() {
             return this._slope;
-        }
-    },
-
-    setSlope: {
-        value: function(m) {
+        },
+        set: function(m) {
             this._slope = m;
+            this.needsDraw = true;
         }
     },
 
     geomType: {
         value: function() {
             return this.GEOM_TYPE_LINE;
+        }
+    },
+
+    getGeomName: {
+        value: function() {
+            return "Line";
         }
     },
 
@@ -285,17 +189,10 @@ exports.Line = Object.create(GeomObj, {
              // create the gl buffer
             var gl = world.getGLContext();
 
-            this._strokeVerticesLen = 0;
-
             var strokeVertices = [];
             var strokeTextures = [];
             var strokeNormals = [];
             var strokeColors = [];
-
-    //        var scaleMat = Matrix.I(3);
-    //        scaleMat.elements[0][0] = this._scaleX;
-    //        scaleMat.elements[1][1] = this._scaleY;
-
 
             // get the normalized device coordinates (NDC) for
             // all position and dimensions.
@@ -336,11 +233,6 @@ exports.Line = Object.create(GeomObj, {
             this._materialArray = [];
             this._materialTypeArray = [];
             this._materialNodeArray = [];
-
-            this._scaleX = (world._viewportWidth)/(world._viewportHeight);
-
-            var innerX = xFill-xStroke;
-            var innerY = yFill-yStroke;
 
             if(this._slope === "vertical") {
                 strokeVertices = [
@@ -480,7 +372,7 @@ exports.Line = Object.create(GeomObj, {
 				for (var i=0;  i<nPrims;  i++)
 				{
 					this._primArray.push( primArray[i] );
-            this._materialNodeArray.push( strokeMaterial.getMaterialNode() );
+                    this._materialNodeArray.push( strokeMaterial.getMaterialNode() );
 				}
 			}
 
@@ -578,6 +470,32 @@ exports.Line = Object.create(GeomObj, {
             if(y > (this._yOffset + this._height)) return false;
 
             return true;
+        }
+    },
+
+    getNearVertex: {
+        value: function( eyePt, dir ){
+            //todo fill in this function
+            return null;
+        }
+    },
+
+    getNearPoint: {
+        value: function( eyePt, dir ){
+            //todo fill in this function
+            return null;
+        }
+    },
+
+    // bounds - a Rectangle instance to hold the [left, top, width, height] points
+    // cop - center of projection of the container canvas
+    getElementBounds: {
+        value: function(bounds, cop) {
+            var xCtr = cop[0] + this._xOffset,                  yCtr = cop[1] - this._yOffset;
+            var xLeft = xCtr - 0.5*this.getWidth(),             yTop = yCtr - 0.5*this.getHeight();
+            var xDist = cop[0] - xLeft,                         yDist = cop[1] - yTop;
+            var xOff = 0.5*this.getWorld().getViewportWidth() - xDist,    yOff  = 0.5*this.getWorld().getViewportHeight() - yDist;
+            bounds.set(xOff, yOff, this.getWidth(), this.getHeight());
         }
     }
 });

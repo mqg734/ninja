@@ -913,8 +913,22 @@ exports.Stage = Montage.create(Component, {
      */
     getElement: {
         value: function(position, selectable) {
-            var point, element,
+            var point, element, hitRec,
                 docView = this.currentDocument.model.views.design;
+
+            if(this.currentDocument.model.domContainer) {
+                if(this.currentDocument.model.domContainer.elementModel.shapeModel) {
+                    hitRec = this.stageDeps.snapManager.getLastHit();
+                    if(hitRec && hitRec.getGeomObj()) {
+                        this.currentDocument.model.domContainer.elementModel.shapeModel.updateSelection(this.currentDocument.model.domContainer.elementModel,
+                                                                                                        hitRec.getGeomObj());
+                        return this.currentDocument.model.domContainer;
+                    } else {
+                        this.currentDocument.model.domContainer.elementModel.shapeModel.updateSelection(this.currentDocument.model.domContainer.elementModel,
+                                                                                                                                null);
+                    }
+                }
+            }
 
             point = webkitConvertPointFromPageToNode(this.canvas, new WebKitPoint(position.pageX - docView.iframe.contentWindow.pageXOffset + this.documentOffsetLeft, position.pageY - docView.iframe.contentWindow.pageYOffset + this.documentOffsetTop));
             element = this.currentDocument.model.views.design.getElementFromPoint(point.x - this.userContentLeft,point.y - this.userContentTop);

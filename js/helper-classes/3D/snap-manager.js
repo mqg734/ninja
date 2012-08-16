@@ -984,6 +984,9 @@ var SnapManager = exports.SnapManager = Montage.create(Component, {
                                     var inv = glmat4.inverse(mat, []);
                                     localPt = MathUtils.transformPoint( localPt, inv );
                                     var hitContained = this.snapToContainedElements( hitRec, localPt,  scrPt );
+                                    if(!hitContained) {
+                                        hitRec.setGeomObj(null);
+                                    }
 
                                     // disable snapping to element bounds when the object is not selected
                                     if (!hitContained && !this.application.ninja.selectionController.isObjectSelected(elt))
@@ -1112,6 +1115,9 @@ var SnapManager = exports.SnapManager = Montage.create(Component, {
                 localPt = MathUtils.transformPoint( localPt, inv );
                 var hitContained = false;
                 hitContained = this.snapToContainedElements( hitRec, localPt,  globalScrPt );
+                if(!hitContained) {
+                    hitRec.setGeomObj(null);
+                }
             }
 
             return hitRec;
@@ -1464,6 +1470,9 @@ var SnapManager = exports.SnapManager = Montage.create(Component, {
                     break;
 
                 case glObj.GEOM_TYPE_LINE:
+                    rtnVal = this.doSnapToContainedElement( eyePt,  dir,  glObj,  hitRec, targetScrPt );
+                    break;
+
                 case glObj.GEOM_TYPE_PATH:
                     // Snapping not implemented for these type, but don't throw an error...
                     break;
@@ -1477,6 +1486,10 @@ var SnapManager = exports.SnapManager = Montage.create(Component, {
                 default:
                         throw new Error( "invalid GL geometry type: " + glObj.geomType() );
                     break;
+            }
+
+            if(rtnVal) {
+                hitRec.setGeomObj(glObj);
             }
 
             return rtnVal;
