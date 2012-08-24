@@ -278,14 +278,8 @@ exports.LineTool = Montage.create(ShapeTool, {
             world.addObject(line);
             world.render();
 
-            if(canvas.elementModel.reportAsShape) {
-                canvas.elementModel.selection = "Line";
-                canvas.elementModel.pi = "LinePi";
-                canvas.elementModel.shapeModel.GLGeomObj = line;
-                this.application.ninja.selectionController.selectElement(canvas);
-            } else {
-                canvas.elementModel.shapeModel.updateSelection(canvas.elementModel, line);
-            }
+            canvas.elementModel.shapeModel.updateSelection(canvas.elementModel, line);
+            this.application.ninja.selectionController.selectElement(canvas);
         }
     }
 });

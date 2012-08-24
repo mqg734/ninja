@@ -105,14 +105,8 @@ exports.RectTool = Montage.create(ShapeTool, {
             world.addObject(rect);
             world.render();
 
-            if(canvas.elementModel.reportAsShape) {
-                canvas.elementModel.selection = "Rectangle";
-                canvas.elementModel.pi = "RectanglePi";
-                canvas.elementModel.shapeModel.GLGeomObj = rect;
-                this.application.ninja.selectionController.selectElement(canvas);
-            } else {
-                canvas.elementModel.shapeModel.updateSelection(canvas.elementModel, rect);
-            }
+            canvas.elementModel.shapeModel.updateSelection(canvas.elementModel, rect);
+            this.application.ninja.selectionController.selectElement(canvas);
         }
     }
 });

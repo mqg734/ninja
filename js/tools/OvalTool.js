@@ -84,14 +84,8 @@ exports.OvalTool = Montage.create(ShapeTool, {
             world.addObject(oval);
             world.render();
 
-            if(canvas.elementModel.reportAsShape) {
-                canvas.elementModel.selection = "Oval";
-                canvas.elementModel.pi = "OvalPi";
-                canvas.elementModel.shapeModel.GLGeomObj = oval;
-                this.application.ninja.selectionController.selectElement(canvas);
-            } else {
-                canvas.elementModel.shapeModel.updateSelection(canvas.elementModel, oval);
-            }
+            canvas.elementModel.shapeModel.updateSelection(canvas.elementModel, oval);
+            this.application.ninja.selectionController.selectElement(canvas);
         }
     }
 });
