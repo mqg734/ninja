@@ -299,12 +299,14 @@ exports.GeomObj = Object.create(Object.prototype, {
         }
     },
 
+    // Using getStrokeWidth/setStrokeWidth because subpath and brushstroke override these.
+    // TODO - will consolidate into getter/setters later
     strokeSize: {
         get: function() {
             return this._strokeWidth;
         },
         set: function(w) {
-            this._strokeWidth = w;
+            this.setStrokeWidth(w);
             this.needsDraw = true;
         }
     },
@@ -324,6 +326,52 @@ exports.GeomObj = Object.create(Object.prototype, {
     useWebGl: {
         get: function() {
             return this.getWorld().isWebGL();
+        }
+    },
+
+    left: {
+        get: function() {
+            var canvas = this.getWorld().getCanvas();
+            return this._xOffset + canvas.offsetLeft - this.getWidth()/2 + canvas.width/2;
+        },
+        set: function(value) {
+            var canvas = this.getWorld().getCanvas();
+            this._xOffset = value - canvas.offsetLeft + this.getWidth()/2 - canvas.width/2;
+            this.needsDraw = true;
+        }
+    },
+
+    top: {
+        get: function() {
+            var canvas = this.getWorld().getCanvas();
+            return canvas.height/2 - this._yOffset + canvas.offsetTop - this.getHeight()/2;
+        },
+        set: function(value) {
+            var canvas = this.getWorld().getCanvas();
+            this._yOffset = canvas.height/2 - value + canvas.offsetTop - this.getHeight()/2;
+            this.needsDraw = true;
+        }
+    },
+
+    width: {
+        get: function() {
+            return this._width;
+        },
+        set: function(w) {
+//            this._width = w;
+            this.setWidth(w);
+            this.needsDraw = true;
+        }
+    },
+
+    height: {
+        get: function() {
+            return this._height;
+        },
+        set: function(h) {
+//            this._height = h;
+            this.setHeight(h);
+            this.needsDraw = true;
         }
     },
 
@@ -349,7 +397,9 @@ exports.GeomObj = Object.create(Object.prototype, {
             // TODO - Need to hook this up with RDGE's draw cycle;
 //            this._needsDraw = value;
 //            if(value) {
-                this.update();
+//                this.update();
+            this.buildBuffers();
+            this.world.render();    // TODO - should this be this.render() instead?
 //            }
         }
     },

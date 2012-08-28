@@ -43,105 +43,87 @@ exports.ShapesController = Montage.create(CanvasController, {
                 canvas,
                 m,
                 color;
-            // TODO - Replace all GLGeomObj.buildBuffers() and GLWorld.render() calls with something like needsDraw
             switch(p) {
                 case "strokeSize":
-//                    this.setShapeProperty(el, "strokeSize", value);
                     var strokeInfo = njModule.NJUtils.getValueAndUnits(value);
                     val = this.GetValueInPixels(strokeInfo[0], strokeInfo[1]);
 
-                    // TODO - For now, just handle Line, Rectangle and Oval. Eventually, move this into each class's
-                    // setStrokeWidth code like SubPath and BrushStroke do.
                     var geomType = el.elementModel.shapeModel.GLGeomObj.geomType();
-                    if( (geomType > 0) && (geomType < 4) )
-                    {
-                        // Changing stroke size should grow/shrink the shape from the center.
-//                        var delta = ~~(val - el.elementModel.shapeModel.GLGeomObj.getStrokeWidth()),
-                        var delta = ~~(val - el.elementModel.shapeModel.GLGeomObj.strokeSize),
-                            ol = this.application.ninja.elementMediator.getProperty(el, "left", parseInt),
-                            ot = this.application.ninja.elementMediator.getProperty(el, "top", parseInt),
-                            ow = this.application.ninja.elementMediator.getProperty(el, "width", parseInt),
-                            oh = this.application.ninja.elementMediator.getProperty(el, "height", parseInt),
-                            l, t, w, h;
+                    // Changing stroke size should grow/shrink the shape from the center.
 
-                        if(geomType === 3)
-                        {
-                            var slope = el.elementModel.shapeModel.GLGeomObj.slope;
-                            // set the dimensions
-                            if(slope === "horizontal")
-                            {
-                                h = Math.max(val, 1);
-                                t = ot - ~~(delta/2);
-                            }
-                            else if(slope === "vertical")
-                            {
-                                w = Math.max(val, 1);
-                                l = ol - ~~(delta/2);
-                            }
-                            else
-                            {
-                                var oldXAdj = el.elementModel.shapeModel.GLGeomObj.getXAdj();
-                                var oldYAdj = el.elementModel.shapeModel.GLGeomObj.getYAdj();
-                                var theta = Math.atan(slope);
-                                var xAdj = Math.abs((val/2)*Math.sin(theta));
-                                var yAdj = Math.abs((val/2)*Math.cos(theta));
-                                var dX = ~~(xAdj*2 - oldXAdj*2);
-                                var dY = ~~(yAdj*2 - oldYAdj*2);
+                    var delta = ~~(val - el.elementModel.shapeModel.GLGeomObj.strokeSize),
+                        ol = this.application.ninja.elementMediator.getProperty(el, "left", parseInt),
+                        ot = this.application.ninja.elementMediator.getProperty(el, "top", parseInt),
+                        ow = this.application.ninja.elementMediator.getProperty(el, "width", parseInt),
+                        oh = this.application.ninja.elementMediator.getProperty(el, "height", parseInt),
+                        l, t, w, h;
 
-                                l = ol - dX;
-                                t = ot - dY;
-                                w = ow + dX*2;
-                                h = oh + dY*2;
-
-                                el.elementModel.shapeModel.GLGeomObj.setXAdj(xAdj);
-                                el.elementModel.shapeModel.GLGeomObj.setYAdj(yAdj);
-                            }
-                        }
-                        else
-                        {
-                            l = ol - ~~(delta/2);
+                    if(geomType === 3) {
+                        var slope = el.elementModel.shapeModel.GLGeomObj.slope;
+                        // set the dimensions
+                        if(slope === "horizontal") {
+                            h = Math.max(val, 1);
                             t = ot - ~~(delta/2);
-                            w = ow + delta;
-                            h = oh + delta;
+                        } else if(slope === "vertical") {
+                            w = Math.max(val, 1);
+                            l = ol - ~~(delta/2);
+                        } else {
+                            var oldXAdj = el.elementModel.shapeModel.GLGeomObj.getXAdj();
+                            var oldYAdj = el.elementModel.shapeModel.GLGeomObj.getYAdj();
+                            var theta = Math.atan(slope);
+                            var xAdj = Math.abs((val/2)*Math.sin(theta));
+                            var yAdj = Math.abs((val/2)*Math.cos(theta));
+                            var dX = ~~(xAdj*2 - oldXAdj*2);
+                            var dY = ~~(yAdj*2 - oldYAdj*2);
+
+                            l = ol - dX;
+                            t = ot - dY;
+                            w = ow + dX*2;
+                            h = oh + dY*2;
+
+                            el.elementModel.shapeModel.GLGeomObj.setXAdj(xAdj);
+                            el.elementModel.shapeModel.GLGeomObj.setYAdj(yAdj);
                         }
-
-                        this.application.ninja.elementMediator.setProperties([{element:el,
-                                        properties:{left: l + "px", top: t + "px", width: w + "px", height: h + "px"},
-                                        previousProperties:{left: ol + "px", top: ot + "px", width: ow + "px", height: oh + "px"}}],
-                                        eventType, source);
-
+                    } else {
+                        l = ol - ~~(delta/2);
+                        t = ot - ~~(delta/2);
+                        w = ow + delta;
+                        h = oh + delta;
                     }
-//                    el.elementModel.shapeModel.GLGeomObj.setStrokeWidth(val);
+
+                    this.application.ninja.elementMediator.setProperties([{element:el,
+                                    properties:{left: l + "px", top: t + "px", width: w + "px", height: h + "px"},
+                                    previousProperties:{left: ol + "px", top: ot + "px", width: ow + "px", height: oh + "px"}}],
+                                    eventType, source);
+
                     el.elementModel.shapeModel.GLGeomObj.strokeSize = val;
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
                     break;
                 case "innerRadius":
-                    el.elementModel.shapeModel.GLGeomObj.innerRadius = val;
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
-                    break;
                 case "tlRadius":
                 case "trRadius":
                 case "blRadius":
                 case "brRadius":
                     el.elementModel.shapeModel.GLGeomObj[p] = val;
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
                     break;
                 case "width":
-                    el.elementModel.shapeModel.GLGeomObj.setWidth(val);
-                    CanvasController.setProperty(el, p, value);
-                    el.elementModel.shapeModel.GLWorld.setViewportFromCanvas(el);
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        this.setShapeProperty(el, "width", val);
+                    } else {
+                        CanvasController.setProperty(el, p, value);
+                        el.elementModel.shapeModel.GLWorld.setViewportFromCanvas(el);
+                        this.setShapeProperty(el, "width", val);
+                    }
                     break;
                 case "height":
-                    el.elementModel.shapeModel.GLGeomObj.setHeight(val);
-                    CanvasController.setProperty(el, p, value);
-                    el.elementModel.shapeModel.GLWorld.setViewportFromCanvas(el);
-                    el.elementModel.shapeModel.GLGeomObj.buildBuffers();
-                    el.elementModel.shapeModel.GLWorld.render();
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        this.setShapeProperty(el, "height", val);
+                    } else {
+                        el.elementModel.shapeModel.GLGeomObj.setHeight(val);
+                        CanvasController.setProperty(el, p, value);
+                        el.elementModel.shapeModel.GLWorld.setViewportFromCanvas(el);
+                        el.elementModel.shapeModel.GLGeomObj.buildBuffers();
+                        el.elementModel.shapeModel.GLWorld.render();
+                    }
                     break;
                 case "useWebGl":
                     canvas = njModule.NJUtils.make("canvas", el.className, this.application.ninja.currentDocument);
@@ -233,6 +215,20 @@ exports.ShapesController = Montage.create(CanvasController, {
                     el.elementModel.shapeModel.GLGeomObj.setStrokeAngle(Math.PI * val/180);
                     el.elementModel.shapeModel.GLWorld.render();
                     break;
+                case "left":
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        this.setShapeProperty(el, "left", val + parseInt(CanvasController.getProperty(el, p)));
+                    } else {
+                        CanvasController.setProperty(el, p, value);
+                    }
+                    break;
+                case "top":
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        this.setShapeProperty(el, "top", val + parseInt(CanvasController.getProperty(el, p)));
+                    } else {
+                        CanvasController.setProperty(el, p, value);
+                    }
+                    break;
                 default:
                     CanvasController.setProperty(el, p, value);
             }
@@ -313,6 +309,34 @@ exports.ShapesController = Montage.create(CanvasController, {
                     {
                         return "Flat";
                     }
+                case "left":
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        return (this.getShapeProperty(el, "left") - parseInt(CanvasController.getProperty(el, p)) + "px");
+                    } else {
+                        return CanvasController.getProperty(el, p);
+                    }
+                    break;
+                case "top":
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        return (this.getShapeProperty(el, "top") - parseInt(CanvasController.getProperty(el, p)) + "px");
+                    } else {
+                        return CanvasController.getProperty(el, p);
+                    }
+                    break;
+                case "width":
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        return this.getShapeProperty(el, "width") + "px";
+                    } else {
+                        return CanvasController.getProperty(el, p);
+                    }
+                    break;
+                case "height":
+                    if(el.elementModel.shapeModel.selection && !el.elementModel.reportAsShape) {
+                        return this.getShapeProperty(el, "height") + "px";
+                    } else {
+                        return CanvasController.getProperty(el, p);
+                    }
+                    break;
                 default:
                     return CanvasController.getProperty(el, p);
             }

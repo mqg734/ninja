@@ -1608,7 +1608,7 @@ exports.PenTool = Montage.create(ShapeTool, {
                         // get the subpath for this world
                         this._selectedSubpath = null;
                         this._entryEditMode = this.ENTRY_SELECT_CANVAS; //by default, we're in this mode...change if we find a subpath contained in this canvas
-                        var world = ElementMediator.getShapeProperty(this._selectedSubpathCanvas, "GLWorld");
+                        var world = this.getGLWorld(this._selectedSubpathCanvas, false);    // TODO - we don't support GL yet.
                         if (world === null){
                             throw("Pen tool handleSelectionChange did not work correctly");
                             //something bad happened //TODO handle this better

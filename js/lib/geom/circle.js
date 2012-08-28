@@ -114,6 +114,30 @@ exports.Circle = Object.create(GeomObj, {
         }
     },
 
+    left: {
+        get: function() {
+            var canvas = this.getWorld().getCanvas();
+            return this._xOffset + canvas.offsetLeft - this.getWidth()/2 + canvas.width/2;
+        },
+        set: function(value) {
+            var canvas = this.getWorld().getCanvas();
+            this._xOffset = value - canvas.offsetLeft + this.getWidth()/2 - canvas.width/2;
+            this.needsDraw = true;
+        }
+    },
+
+    top: {
+        get: function() {
+            var canvas = this.getWorld().getCanvas();
+            return this._yOffset + canvas.offsetTop - this.getHeight()/2 + canvas.height/2;
+        },
+        set: function(value) {
+            var canvas = this.getWorld().getCanvas();
+            this._yOffset = value - canvas.offsetTop + this.getHeight()/2 - canvas.height/2;
+            this.needsDraw = true;
+        }
+    },
+
     ///////////////////////////////////////////////////////////////////////
     // Methods
     ///////////////////////////////////////////////////////////////////////
